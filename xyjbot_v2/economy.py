@@ -211,9 +211,11 @@ def smart_eat_drink(s, nav):
         if "钱不够" in r or "什么" in r:
             print("  [FOOD] couldn't buy jiudai!")
         else:
-            print("  [FOOD] bought jiudai")
+            print("  [FOOD] bought jiudai — MUST fill with water before drinking (alcohol!)")
+            m(s, "fill jiudai", q=1.0)  # CRITICAL: replace alcohol with water
 
     # Fill jiudai (refill existing bag — much cheaper than buying new)
+    # Also re-fills a freshly bought bag (which contains alcohol, not water)
     m(s, "fill jiudai", q=1.0)
 
     # Buy food if still needed
