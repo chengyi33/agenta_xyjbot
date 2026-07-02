@@ -466,6 +466,14 @@ class XYJMap:
         if len(cands) == 1:
             return cands[0]
 
+        # Strategy 0.5: prefer accessible dirs when no region known
+        from config import ACCESSIBLE_DIRS
+        acc_cands = [c for c in cands if any(c.startswith(d) for d in ACCESSIBLE_DIRS)]
+        if acc_cands and len(acc_cands) < len(cands):
+            cands = acc_cands  # narrow to accessible only
+            if len(cands) == 1:
+                return cands[0]
+
         # Strategy 1: adjacency from previous room + direction
         if prev_id and came_dir:
             # Direct exit from prev_id

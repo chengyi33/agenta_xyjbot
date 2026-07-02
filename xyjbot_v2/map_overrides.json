@@ -1,16 +1,8 @@
 {
-  "broken_edges": {
-    "d/gao/road4|d/gao/road3": {
-      "direction": "east",
-      "failures": 1,
-      "first_failed": 1782980125.26358,
-      "last_failed": 1782980125.263586,
-      "permanent": false
-    }
-  },
+  "broken_edges": {},
   "discovered_rooms": {},
   "discovered_edges": {},
   "pending_rooms": {},
   "pending_edges": {},
-  "saved_at": "2026-07-02T01:15:25.267332"
+  "saved_at": "2026-07-02T01:20:00"
 }
