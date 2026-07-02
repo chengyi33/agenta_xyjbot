@@ -156,12 +156,10 @@ MAX_FULL_SWEEP = 45  # rooms — small areas get full sweep
 
 def sweep_vicinity(s, nav, M, anchor_id, search_dirs, name, ids, radius=3):
     """Go to anchor, search for monster, fight if found."""
-    from economy import eat_drink, restock, wait_full_hp
+    from economy import smart_eat_drink, wait_full_hp
     from combat import fight
 
-    low = eat_drink(s)
-    if low:
-        restock(s, nav)
+    smart_eat_drink(s, nav)
     wait_full_hp(s)
 
     t_start = time.time()
@@ -218,7 +216,7 @@ def sweep_vicinity(s, nav, M, anchor_id, search_dirs, name, ids, radius=3):
                         continue
                     break
                 if result == "fled":
-                    eat_drink(s)
+                    smart_eat_drink(s, nav)
                     wait_full_hp(s)
                     r2 = nav.goto(room_id, area_dirs=search_dirs, max_steps=MAX_STEPS_PER_NAV)
                     if r2 == "dead":

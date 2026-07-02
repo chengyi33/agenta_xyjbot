@@ -122,7 +122,8 @@ def gear_up(s, nav):
 
 
 def eat_drink(s):
-    """Eat/drink until full. Returns set of labels still low (need restock)."""
+    """Eat/drink from inventory until full or items run out.
+    Returns set of labels still low — caller decides whether to restock."""
     hr = m(s, "hp", q=1.5)
     hp = parse_hp(hr)
     still_low = set()
@@ -131,7 +132,7 @@ def eat_drink(s):
             continue
         cur, mx = hp[label]
         if cur < mx:
-            print(f"  [{label}] {cur}/{mx} — refilling")
+            print(f"  [{label}] {cur}/{mx} — eating/drinking from inventory")
             ran_out = False
             for _ in range(15):
                 r = m(s, cmd, q=0.5)
@@ -145,16 +146,88 @@ def eat_drink(s):
     return still_low
 
 
-def restock(s, nav):
-    """Go to kezhan, refill wine bag, buy food, eat/drink to full."""
-    print("  [RESTOCK] heading to kezhan")
+FOOD_THRESHOLD = 150   # ~40% of max 360
+WATER_THRESHOLD = 150
+
+
+def needs_food_or_water(s):
+    """Check hp — return (needs_food, needs_water, food_cur, water_cur)."""
+    hr = m(s, "hp", q=1.5)
+    hp = parse_hp(hr)
+    food = hp.get("食物", (999, 360))
+    water = hp.get("饮水", (999, 360))
+    return food[0] < FOOD_THRESHOLD, water[0] < WATER_THRESHOLD, food[0], water[0]
+
+
+def has_food_in_inv(inv):
+    return any(w in inv for w in ("狗肉", "鸡腿", "gourou", "jitui", "肉"))
+
+
+def has_jiudai_in_inv(inv):
+    return "酒袋" in inv or "jiudai" in inv
+
+
+def smart_eat_drink(s, nav):
+    """Self-aware food/water management.
+
+    Decision tree:
+    1. Check hp — if food AND water >= 150, nothing to do
+    2. Check inventory (i):
+       - Have food in bag? → eat now (no trip)
+       - Have jiudai in bag? → drink now (no trip)
+    3. If still low after eating from inventory → go to kezhan:
+       - No jiudai in inventory? → buy jiudai first (1两)
+       - Fill jiudai (refills existing bag cheaply)
+       - Buy gou rou if food still low
+       - Eat/drink to full
+    """
+    needs_f, needs_w, food_cur, water_cur = needs_food_or_water(s)
+    if not needs_f and not needs_w:
+        return  # all good
+
+    print(f"  [FOOD] food={food_cur} water={water_cur} — checking inventory")
+    inv = m(s, "i", q=1.5, log_path=LOG_PATH)
+
+    # Try eating/drinking from what we have
+    still_low = eat_drink(s)
+
+    # Re-check after eating from inventory
+    needs_f, needs_w, food_cur, water_cur = needs_food_or_water(s)
+    if not needs_f and not needs_w:
+        print("  [FOOD] satisfied from inventory — no shop trip needed")
+        return
+
+    # Need to go to kezhan
+    print(f"  [FOOD] still low (food={food_cur} water={water_cur}) — heading to kezhan")
     nav.goto(LANDMARKS["kezhan"])
+
+    # Re-check inventory after arriving
+    inv = m(s, "i", q=1.0)
+
+    # Buy jiudai if we don't have one at all
+    if not has_jiudai_in_inv(inv):
+        print("  [FOOD] no jiudai in inventory — buying one")
+        r = m(s, "buy jiudai from xiao er", q=1.3)
+        if "钱不够" in r or "什么" in r:
+            print("  [FOOD] couldn't buy jiudai!")
+        else:
+            print("  [FOOD] bought jiudai")
+
+    # Fill jiudai (refill existing bag — much cheaper than buying new)
     m(s, "fill jiudai", q=1.0)
-    for _ in range(8):
-        r = m(s, "buy gou rou from xiao er", q=0.6)
-        if any(w in r for w in ("钱不够", "没有卖", "什么")):
-            break
+
+    # Buy food if still needed
+    if needs_f:
+        print("  [FOOD] buying gou rou")
+        for _ in range(8):
+            r = m(s, "buy gou rou from xiao er", q=0.6)
+            if any(w in r for w in ("钱不够", "没有卖", "什么")):
+                break
+
+    # Eat/drink to full
     eat_drink(s)
+    needs_f, needs_w, food_cur, water_cur = needs_food_or_water(s)
+    print(f"  [FOOD] final: food={food_cur} water={water_cur}")
 
 
 def wait_full_hp(s, tries=40):

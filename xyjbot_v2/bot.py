@@ -12,7 +12,7 @@ from config import *
 from map_engine import XYJMap
 from nav import Navigator
 from net import connect, disconnect, m, drain, clean, parse_short, parse_exits, is_dead, send
-from economy import gear_up, eat_drink, restock, wait_full_hp, bank_deposit, already_geared
+from economy import gear_up, eat_drink, smart_eat_drink, wait_full_hp, bank_deposit, already_geared
 from net import connect, disconnect, m, drain, clean, parse_short, parse_exits, is_dead, send, parse_hp
 from mission import ask_yuan, resolve_target, sweep_vicinity, load_mission, save_mission
 from mission import mission_age, mission_expired, MISSION_TTL
@@ -93,9 +93,9 @@ def self_check(s, nav):
         print(f"  [FIX] armor after wear: {arm}")
 
     # Food/water low? Restock before anything else
-    if food[0] < 100 or water[0] < 100:
-        print("  [FIX] food/water low — restocking")
-        restock(s, nav)
+    if food[0] < 150 or water[0] < 150:
+        print("  [FIX] food/water low — smart restock")
+        smart_eat_drink(s, nav)
         hr = m(s, "hp", q=1.5)
         hp = parse_hp(hr)
         food = hp.get("食物", (0, 0))
@@ -283,10 +283,10 @@ def main():
                 print("  [PRE-MISSION] no weapon anywhere — gearing up")
                 gear_up(s, nav)
 
-        # Food/water low? Restock
-        if food[0] < 100 or water[0] < 100:
-            print("  [PRE-MISSION] food/water low — restocking")
-            restock(s, nav)
+        # Food/water low? Smart restock (check inventory first, shop only if needed)
+        if food[0] < 150 or water[0] < 150:
+            print("  [PRE-MISSION] food/water low — smart restock")
+            smart_eat_drink(s, nav)
 
         # HP low? Rest
         if qixue[0] < qixue[1] * 0.8:
@@ -323,7 +323,7 @@ def main():
         # ── Handle result ──────────────────────────────────────────────
         if result == "mission_lost":
             print("  !! KO'd — guai gone. Recovering, waiting for reset")
-            eat_drink(s)
+            smart_eat_drink(s, nav)
             wait_full_hp(s)
             continue
 
