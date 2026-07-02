@@ -117,8 +117,22 @@ class Navigator:
             # BFS from current position
             path = self.M.path(self.current_rid, goal_id)
             if path is None:
-                print(f"  [nav] no path from {self.current_rid} to {goal_id} — trying localize")
-                return self._localize_and_retry(goal_id, area_dirs)
+                # Check if we're in an inaccessible region (no path = wrong region)
+                from config import ACCESSIBLE_DIRS
+                if self.current_rid and not any(
+                    self.current_rid.startswith(d + "/") or self.current_rid.startswith(d)
+                    for d in ACCESSIBLE_DIRS
+                ):
+                    print(f"  [nav] in inaccessible region ({self.current_rid}) — returning 'inaccessible'")
+                    return "inaccessible"
+                print(f"  [nav] no path from {self.current_rid} to {goal_id} — trying localize (no-recurse)")
+                # Try looking + walking to identify, but DON'T recurse goto
+                rid2, _, s2, ex2 = self.look_and_identify(area_dirs=area_dirs)
+                if rid2 and rid2 != self.current_rid:
+                    print(f"  [nav] re-identified at {s2} ({rid2}) after no-path")
+                    self.current_rid = rid2
+                    continue  # try BFS again with new position
+                return False
             if not path:
                 return True
 

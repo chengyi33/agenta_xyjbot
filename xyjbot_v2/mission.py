@@ -119,7 +119,10 @@ def mission_expired(t_start):
 def ask_yuan(s, nav):
     """Return (name, ids, region, landmark, t_start, cleared).
     cleared=True when Yuan says 除尽 (previous mission completed)."""
-    nav.goto(LANDMARKS["yuan"])
+    result = nav.goto(LANDMARKS["yuan"])
+    if result == "inaccessible":
+        print("  [YUAN] in inaccessible region — can't reach Yuan")
+        return None, [], None, None, 0, False
     r = m(s, "ask yuan about kill", q=3.0, log_path=LOG_PATH)
     print("  --- YUAN ---")
     for ln in r.split("\n"):
@@ -276,7 +279,7 @@ def global_sweep(s, nav, M, name, ids):
         r = nav.goto(room_id, area_dirs=list(ACCESSIBLE_DIRS), max_steps=MAX_STEPS_PER_NAV)
         if r == "dead":
             return "dead"
-        if r == "stuck":
+        if r in ("stuck", "inaccessible"):
             return "stuck"
         if not r:
             continue

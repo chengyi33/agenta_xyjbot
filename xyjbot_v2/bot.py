@@ -34,6 +34,7 @@ def self_check(s, nav):
     print("\n[SELF-CHECK] === Assessing condition ===")
 
     # 1. Position
+    from config import ACCESSIBLE_DIRS as _ACCESSIBLE_DIRS
     rid, desc, short, exits = nav.look_and_identify()
     if rid:
         print(f"  [POS] {short} ({rid})")
@@ -42,6 +43,22 @@ def self_check(s, nav):
             escape_ourhome(s, nav)
             rid, _, short, _ = nav.look_and_identify()
             print(f"  [POS] now at {short} ({rid})")
+        elif not any(rid.startswith(d + '/') or rid.startswith(d) for d in _ACCESSIBLE_DIRS):
+            # Wrong region (e.g. 取经路, 月宫) — quit+relog to get back to kezhan
+            print(f"  [POS] inaccessible region {rid} — quit+relog to return home")
+            try:
+                m(s, "quit", q=3.0)
+            except Exception:
+                pass
+            from net import disconnect, connect
+            disconnect(s)
+            import time; time.sleep(3)
+            s2 = connect()
+            nav.s = s2
+            nav.current_rid = None
+            rid, _, short, _ = nav.look_and_identify()
+            print(f"  [POS] after relog: {short} ({rid})")
+            return self_check(s2, nav)  # re-run check with fresh connection
     else:
         print("  [POS] can't identify — will localize by walking")
         nav.force_localize(M_obj=None)
