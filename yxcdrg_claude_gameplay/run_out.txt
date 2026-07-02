@@ -1,0 +1,38 @@
+[MAP] 4938 rooms loaded
+[SETUP]
+  [LOC] at 正院 (d/gao/zhyuan)
+  gear dmg=25 armor=1
+  [GOLD] asked 大爷 for gold (ok)
+  --- 兵器铺 stock ---
+    你可以购买下列这些东西：
+    钢叉(fork)                    ：十两银子
+    匕首(dagger)                  ：五十文钱
+    牛皮盾(shield)                ：十两银子
+    长枪(spear)                   ：五两银子
+    铁链(tielian)                 ：五两银子
+    铁斧(axe)                     ：三两银子
+    禅杖(staff)                   ：五两银子
+    镔铁棍(tiegun)                ：二十两银子
+    长剑(sword)                   ：五两银子
+    铁锤(hammer)                  ：三两银子
+    钢刀(blade)                   ：五两银子
+    >
+  gear after buy: dmg=25 armor=16
+
+[ATTEMPT 1] kills=0/1
+  --- YUAN ---
+    你向袁天罡打听有关『kill』的消息。
+    袁天罡哼了一声。
+    袁天罡说道：在下不是请您去收服白马怪吗？
+  Mission: 白马怪 ids=['baima', 'guai'] region=高老庄 landmark=农舍
+  -> landmark 农舍 (d/gao/house)
+  vicinity: 6 rooms within 4 hops
+  ** 白马怪 found in 农舍 **
+  >> ENGAGING 白马怪
+  >> engaged
+  *** VICTORY ***
+
+  *** KILL #1 this run: 白马怪  |  LIFETIME TOTAL: 1 ***
+
+=== DONE: 1 kills this run | LIFETIME 1 ===
+*** session end: closing socket (no casual quit) ***
