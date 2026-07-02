@@ -167,11 +167,35 @@ class Navigator:
                                           area_dirs=area_dirs,
                                           current_region=self.current_region)
                     if rid:
+                        # Landed in a known room, but not the expected one.
+                        # Graph edge was wrong — fix it.
+                        if self.current_rid and rid != expected_next:
+                            print(f"  [nav] edge mismatch: graph said {d}→{expected_next}, "
+                                  f"actually at {rid}")
+                            self.M.mark_edge_broken(self.current_rid, expected_next, d)
+                            self.M.add_discovered_edge(self.current_rid, rid, d)
                         self.current_rid = rid
+                        self._update_region(rid)
                         self.last_dir = d
                         continue
-                    # Can't identify — fall through to look
+                    # Can't identify — might be a NEW room not in the map
                     print(f"  [nav] mismatch: expected '{expected_short}', got '{actual_short}'")
+                    print(f"  [nav] unknown room — discovering! exits={actual_exits}")
+                    new_rid = self._generate_room_id(actual_short)
+                    self.M.add_discovered_room(new_rid, actual_short, actual_exits,
+                                               from_rid=self.current_rid, direction=d)
+                    if self.current_rid:
+                        self.M.mark_edge_broken(self.current_rid, expected_next, d)
+                    self.current_rid = new_rid
+                    self._update_region(new_rid)
+                    self.last_dir = d
+                    continue
+            else:
+                # Move failed — graph said this exit exists but can't go
+                if self.current_rid and expected_next:
+                    print(f"  [nav] move blocked: {d} from {self.current_rid} "
+                          f"(graph expected {expected_next})")
+                    self.M.mark_edge_broken(self.current_rid, expected_next, d)
 
             # Move failed or can't identify — look and re-identify
             rid, desc, short, exits = self.look_and_identify(
@@ -194,6 +218,15 @@ class Navigator:
 
         print(f"  [nav] max steps ({max_steps}) reached")
         return False
+
+    def _generate_room_id(self, short):
+        """Generate a room ID for a discovered room not in the original map."""
+        import time as _t
+        ts = int(_t.time()) % 100000
+        region = self.current_region or "d/unknown"
+        # Sanitize short name for use in path (keep Chinese, strip punctuation)
+        safe = re.sub(r'[^\w\u4e00-\u9fff]', '', short or "room")[:10]
+        return f"{region}/discovered_{safe}_{ts}"
 
     def _localize_and_retry(self, goal_id, area_dirs=None, tries=16):
         """Find current position by walking to a uniquely identifiable room."""

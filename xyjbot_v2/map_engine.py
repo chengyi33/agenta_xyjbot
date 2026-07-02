@@ -119,6 +119,102 @@ class XYJMap:
         # {short_name: {frozenset(exits): rid}}
         self._id_cache = defaultdict(dict)
 
+        # ── Live map overrides: discovered/fixed during gameplay ────────
+        # Loaded from map_overrides.json, persisted on every change
+        self._overrides_path = os.path.join(os.path.dirname(MAP_PATH), "map_overrides.json")
+        self._broken_edges = set()       # {(from_rid, to_rid)} — edges that don't work
+        self._discovered_rooms = {}      # {rid: {"short": str, "exits": {dir: rid}}}
+        self._discovered_edges = []      # [(from_rid, to_rid, dir)] — new edges found
+        self._load_overrides()
+
+        # Apply discovered rooms to the graph
+        for rid, info in self._discovered_rooms.items():
+            if rid not in self.g:
+                self.g[rid] = {"short": info.get("short", ""), "exits": info.get("exits", {})}
+                s = info.get("short", "")
+                if s:
+                    self.by_short[s].append(rid)
+                    rprefix = region_of(rid)
+                    self.by_short_in_region[rprefix][s].append(rid)
+
+        # Apply discovered edges to adjacency
+        for u, t, d in self._discovered_edges:
+            self.adj[u][t] = d
+
+        # Remove broken edges from adjacency
+        for u, t in self._broken_edges:
+            self.adj.get(u, {}).pop(t, None)
+
+    def _load_overrides(self):
+        """Load map overrides from JSON file."""
+        if not os.path.exists(self._overrides_path):
+            return
+        try:
+            data = json.load(open(self._overrides_path, encoding="utf-8"))
+            self._broken_edges = set(tuple(e) for e in data.get("broken_edges", []))
+            self._discovered_rooms = data.get("discovered_rooms", {})
+            self._discovered_edges = [tuple(e) for e in data.get("discovered_edges", [])]
+            print(f"  [MAP] loaded overrides: {len(self._broken_edges)} broken, "
+                  f"{len(self._discovered_rooms)} rooms, {len(self._discovered_edges)} edges")
+        except Exception as e:
+            print(f"  [MAP] failed to load overrides: {e}")
+
+    def _save_overrides(self):
+        """Persist map overrides to JSON file."""
+        data = {
+            "broken_edges": [list(e) for e in self._broken_edges],
+            "discovered_rooms": self._discovered_rooms,
+            "discovered_edges": [list(e) for e in self._discovered_edges],
+        }
+        try:
+            json.dump(data, open(self._overrides_path, "w", encoding="utf-8"),
+                      ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"  [MAP] failed to save overrides: {e}")
+
+    def mark_edge_broken(self, from_rid, to_rid, direction=None):
+        """Mark an edge as broken/conditional. Re-BFS will avoid it."""
+        key = (from_rid, to_rid)
+        if key not in self._broken_edges:
+            self._broken_edges.add(key)
+            # Remove from adjacency immediately
+            self.adj.get(from_rid, {}).pop(to_rid, None)
+            print(f"  [MAP] marked edge broken: {from_rid} → {to_rid} ({direction})")
+            self._save_overrides()
+
+    def add_discovered_room(self, rid, short, exits, from_rid=None, direction=None):
+        """Add a room not in the original map. Link to from_rid if given."""
+        if rid in self.g and rid not in self._discovered_rooms:
+            # Room exists in map but wasn't linked — just add the edge
+            if from_rid and direction:
+                self.add_discovered_edge(from_rid, rid, direction)
+            return
+
+        # New room
+        self._discovered_rooms[rid] = {"short": short, "exits": exits}
+        if rid not in self.g:
+            self.g[rid] = {"short": short, "exits": dict(exits)}
+            if short:
+                self.by_short[short].append(rid)
+                rprefix = region_of(rid)
+                self.by_short_in_region[rprefix][short].append(rid)
+        print(f"  [MAP] discovered new room: {rid} ({short}) exits={list(exits.keys())}")
+
+        # Link from previous room
+        if from_rid and direction:
+            self.add_discovered_edge(from_rid, rid, direction)
+
+        self._save_overrides()
+
+    def add_discovered_edge(self, from_rid, to_rid, direction):
+        """Add a new edge between two known rooms."""
+        edge = (from_rid, to_rid, direction)
+        if edge not in self._discovered_edges:
+            self._discovered_edges.append(edge)
+            self.adj[from_rid][to_rid] = direction
+            print(f"  [MAP] discovered new edge: {from_rid} --{direction}--> {to_rid}")
+            self._save_overrides()
+
     def _load_findmap(self, path=FINDMAP_PATH):
         data = None
         for enc in ("gbk", "gb18030", "gb2312", "utf-8"):
