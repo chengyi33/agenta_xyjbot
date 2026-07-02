@@ -1,0 +1,195 @@
+"""
+economy.py — Gear purchasing, food/water management, banking.
+
+Handles: gear up at start of session, eat/drink, deposit/withdraw money.
+"""
+import re, time, sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from config import (LANDMARKS, KEEP_ON_HAND, FOOD_THRESHOLD, WATER_THRESHOLD,
+                    FULL_MSGS, EMPTY_MSGS, LOG_PATH)
+from net import m, send, parse_hp, drain, clean
+from nav import Navigator
+
+
+def gear_up(s, nav):
+    """Ensure we have weapon + shield. Buy from shop if needed."""
+    # Check current gear
+    sc = m(s, "score", q=2.5, log_path=LOG_PATH)
+    dmg = _parse_stat(sc, r"兵器伤害力：\[\s*(\d+)")
+    arm = _parse_stat(sc, r"盔甲保护力：\[\s*(\d+)")
+    print(f"  gear: dmg={dmg} armor={arm}")
+
+    # Check yuan's location for dropped gear
+    nav.goto(LANDMARKS["yuan"])
+    r = m(s, "look", q=1.5, log_path=LOG_PATH)
+    if any(w in r for w in ("甲", "盔", "盾", "刀", "剑", "枪", "叉", "袍", "衣", "护")):
+        print("  [GEAR] items at yuan — picking up")
+        m(s, "get all", q=1.5)
+        m(s, "unwield all", q=1.0)
+        m(s, "remove all", q=1.0)
+        m(s, "drop coarse", q=1.0)
+        m(s, "wield all", q=1.0)
+        m(s, "wear all", q=1.0)
+        sc = m(s, "score", q=2.5)
+        dmg = _parse_stat(sc, r"兵器伤害力：\[\s*(\d+)")
+        arm = _parse_stat(sc, r"盔甲保护力：\[\s*(\d+)")
+        print(f"  gear after pickup: dmg={dmg} armor={arm}")
+
+    if dmg > 0 and arm >= 10:
+        print("  [GEAR] already equipped — skipping shop")
+        return dmg, arm
+
+    # Need to buy
+    _bank_withdraw(s, nav, need=20)
+
+    # Buy from 兵器铺
+    nav.goto(LANDMARKS["shop"])
+    print("  --- 兵器铺 stock ---")
+    stock = m(s, "list", q=1.5)
+    for ln in stock.split("\n"):
+        if ln.strip():
+            print(f"    {ln.strip()}")
+
+    if dmg == 0:
+        for wpn in ("blade", "spear", "sword", "fork", "dagger"):
+            r = m(s, f"buy {wpn} from xiao xiao", q=1.3)
+            if "钱不够" not in r and "什么" not in r:
+                print(f"  [GEAR] bought {wpn}")
+                break
+    if arm < 10:
+        r = m(s, "buy shield from xiao xiao", q=1.3)
+        if "钱不够" not in r and "什么" not in r:
+            print("  [GEAR] bought shield")
+
+    m(s, "wield all", q=1.0)
+    m(s, "wear all", q=1.0)
+
+    # Check 当铺 (pawn shop) for better gear
+    nav.goto(LANDMARKS.get("pawn", LANDMARKS["shop"]))
+    pawn_stock = m(s, "list", q=1.5)
+    if any(w in pawn_stock for w in ("甲", "盾", "刀", "剑", "枪")):
+        print("  [GEAR] checking pawn shop for upgrades")
+        for line in pawn_stock.split("\n"):
+            if any(w in line for w in ("甲", "盾", "刀", "剑", "枪")) and "两" in line:
+                # Try to buy the first good item
+                # Parse the item id from the line
+                m2 = re.search(r"\((\w+)\)", line)
+                if m2:
+                    item_id = m2.group(1)
+                    r = m(s, f"buy {item_id} from dongpushen", q=1.3)
+                    if "钱不够" not in r and "什么" not in r:
+                        print(f"  [GEAR] bought {item_id} from pawn shop")
+                        m(s, "wield all", q=1.0)
+                        m(s, "wear all", q=1.0)
+                        break
+
+    sc = m(s, "score", q=2.5)
+    dmg = _parse_stat(sc, r"兵器伤害力：\[\s*(\d+)")
+    arm = _parse_stat(sc, r"盔甲保护力：\[\s*(\d+)")
+    print(f"  gear final: dmg={dmg} armor={arm}")
+    return dmg, arm
+
+
+def eat_drink(s):
+    """Eat/drink until full. Returns set of labels still low (need restock)."""
+    hr = m(s, "hp", q=1.5)
+    hp = parse_hp(hr)
+    still_low = set()
+    for label, cmd in [("食物", "eat gou rou"), ("饮水", "drink jiudai")]:
+        if label not in hp:
+            continue
+        cur, mx = hp[label]
+        if cur < mx:
+            print(f"  [{label}] {cur}/{mx} — refilling")
+            ran_out = False
+            for _ in range(15):
+                r = m(s, cmd, q=0.5)
+                if any(w in r for w in FULL_MSGS):
+                    break
+                if any(w in r for w in EMPTY_MSGS):
+                    ran_out = True
+                    break
+            if ran_out:
+                still_low.add(label)
+    return still_low
+
+
+def restock(s, nav):
+    """Go to kezhan, refill wine bag, buy food, eat/drink to full."""
+    print("  [RESTOCK] heading to kezhan")
+    nav.goto(LANDMARKS["kezhan"])
+    m(s, "fill jiudai", q=1.0)
+    for _ in range(8):
+        r = m(s, "buy gou rou from xiao er", q=0.6)
+        if any(w in r for w in ("钱不够", "没有卖", "什么")):
+            break
+    eat_drink(s)
+
+
+def wait_full_hp(s, tries=40):
+    """Rest until 气血 AND 精神 are full."""
+    for _ in range(tries):
+        hr = m(s, "hp", q=1.0)
+        hp = parse_hp(hr)
+        qixue = hp.get("气血", (1, 1))
+        jingshen = hp.get("精神", (1, 1))
+        print(f"  [HP] 气血 {qixue[0]}/{qixue[1]}  精神 {jingshen[0]}/{jingshen[1]}")
+        if qixue[0] >= qixue[1] and jingshen[0] >= jingshen[1]:
+            return True
+        time.sleep(6)
+    print("  [HP] timed out — proceeding anyway")
+    return False
+
+
+def bank_deposit(s, nav):
+    """Deposit excess money."""
+    nav.goto(LANDMARKS["bank"])
+    m(s, "deposit gold", q=2.0)
+    sc = m(s, "score", q=2.0)
+    on_hand = _money_from_score(sc)
+    if on_hand <= KEEP_ON_HAND:
+        return
+    to_deposit = int(on_hand - KEEP_ON_HAND)
+    m(s, f"deposit {to_deposit} silver", q=2.0)
+    print(f"  [BANK] deposited {to_deposit}两")
+
+
+def _bank_withdraw(s, nav, need=20):
+    """Withdraw from bank if needed."""
+    sc = m(s, "score", q=2.0)
+    on_hand = _money_from_score(sc)
+    if on_hand >= need:
+        return on_hand
+    nav.goto(LANDMARKS["bank"])
+    m(s, "deposit gold", q=2.0)
+    sc = m(s, "score", q=2.0)
+    on_hand = _money_from_score(sc)
+    if on_hand >= need:
+        return on_hand
+    to_withdraw = need - int(on_hand)
+    m(s, f"withdraw {to_withdraw} silver", q=2.0)
+    print(f"  [BANK] withdrew {to_withdraw}两")
+    return _money_from_score(m(s, "score", q=2.0))
+
+
+def _money_from_score(sc):
+    """Parse total silver from score."""
+    mm = re.search(r"(\d+)\s*两", sc)
+    liang = int(mm.group(1)) if mm else 0
+    mm2 = re.search(r"(\d+)\s*钱", sc)
+    qian = int(mm2.group(1)) if mm2 else 0
+    mm3 = re.search(r"黄金[^0-9]*(\d+)", sc)
+    gold = int(mm3.group(1)) if mm3 else 0
+    return liang + qian / 10.0 + gold * 100
+
+
+def _parse_stat(sc, pattern):
+    mm = re.search(pattern, sc)
+    return int(mm.group(1)) if mm else 0
+
+
+def already_geared(s):
+    """Check if weapon is equipped."""
+    sc = m(s, "score", q=2.0)
+    dmg = _parse_stat(sc, r"兵器伤害力：\[\s*(\d+)")
+    return dmg > 0
