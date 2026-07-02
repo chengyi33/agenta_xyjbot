@@ -8,7 +8,7 @@ import os
 
 # ── Connection ─────────────────────────────────────────────────────────
 HOST, PORT = "146.190.143.182", 6666
-USER, PASS = "yxcdrg", "198633"
+USER, PASS = "honua", "198633"
 
 # ── Paths ──────────────────────────────────────────────────────────────
 BOT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -45,6 +45,78 @@ STEP_TIMEOUT = 0.7       # seconds to wait after a step
 LOOK_TIMEOUT = 1.2       # seconds to wait after look
 DRAIN_QUIET = 0.3        # quiet period for drain
 MAX_STEPS_NO_PROGRESS = 5 # consecutive failed steps before re-identifying
+
+# ── Region hierarchy ──────────────────────────────────────────────────
+# Directory prefix → human-readable region name
+# This gives the bot hierarchical spatial awareness:
+#   "Am I in 长安? Then '街道' means one of 3 rooms, not 61"
+# Regions are ordered coarse→fine: d/ (world) → d/city (city) → d/city/street3 (room)
+REGIONS = {
+    # ── 长安 area (central hub) ──────────────────────────────────────
+    "d/city":       "长安城",
+    "d/changan":    "长安郊外",
+    "d/westway":    "西行路",
+    "d/eastway":    "东行路",
+    "d/huanggong":  "皇宫",
+    # ── 开封 area ────────────────────────────────────────────────────
+    "d/kaifeng":    "开封城",
+    # ── 高老庄 area ──────────────────────────────────────────────────
+    "d/gao":        "高老庄",
+    # ── 东海 / 龙宫 area ─────────────────────────────────────────────
+    "d/sea":        "东海龙宫",
+    "d/nanhai":     "南海普陀",
+    # ── 取经路 (largest region, 2127 rooms) ──────────────────────────
+    "d/qujing":     "取经路",
+    # ── 其他区域 ──────────────────────────────────────────────────────
+    "d/lingtai":    "灵台方寸",
+    "d/moon":       "月宫",
+    "d/penglai":    "蓬莱仙岛",
+    "d/xueshan":    "大雪山",
+    "d/meishan":    "梅山",
+    "d/death":      "地府",
+    "d/ourhome":    "新手村",
+    "d/jjf":        "将军府",
+    "d/sky":        "天宫",
+    "d/cloud":      "云栈洞",
+    "d/southern":   "南瞻部洲",
+    "d/pantao":     "蟠桃园",
+    "d/dntg":       "大闹天宫",
+    "d/obj":        "物品",
+}
+
+# Coarse region grouping — which regions are "near 长安" vs "far away"
+# Used for sanity checking: if bot was in 长安 and suddenly sees a 开封 room,
+# something went wrong (teleport? death? wrong identification?)
+REGION_NEIGHBORS = {
+    "长安城":   {"长安郊外", "西行路", "东行路", "高老庄", "皇宫"},
+    "长安郊外": {"长安城", "西行路", "东行路", "东海龙宫", "南海普陀"},
+    "西行路":   {"长安城", "长安郊外", "高老庄"},
+    "东行路":   {"长安城", "长安郊外"},
+    "高老庄":   {"长安城", "西行路", "取经路"},
+    "开封城":   {"取经路"},
+    "东海龙宫": {"长安郊外"},
+    "南海普陀": {"长安郊外"},
+    "取经路":   {"高老庄", "开封城", "大雪山", "梅山"},
+    "皇宫":     {"长安城"},
+}
+
+
+def region_of(rid):
+    """Get the region directory prefix for a room id.
+    e.g. 'd/city/street3' → 'd/city'
+    """
+    parts = rid.split("/")
+    if len(parts) >= 2:
+        return "/".join(parts[:2])
+    return rid
+
+
+def region_name_of(rid):
+    """Get human-readable region name for a room id.
+    e.g. 'd/city/street3' → '长安城'
+    """
+    return REGIONS.get(region_of(rid), region_of(rid))
+
 
 # ── Landmarks (source-verified unique room ids) ────────────────────────
 LANDMARKS = {

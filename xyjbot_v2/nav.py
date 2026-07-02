@@ -9,7 +9,8 @@ Only `look` on: startup, mismatch, or stuck. This cuts navigation time by ~60%.
 import time, re, sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import (LANDMARKS, REVERSE, EXIT_TOKENS, MOVE_FAIL, STEP_TIMEOUT,
-                    LOOK_TIMEOUT, LOG_PATH, COMBAT_SIGNS, OURHOME_PREFIX)
+                    LOOK_TIMEOUT, LOG_PATH, COMBAT_SIGNS, OURHOME_PREFIX,
+                    region_of, region_name_of, REGIONS, REGION_NEIGHBORS)
 from net import drain, clean, send, m, parse_short, parse_exits, is_dead
 from map_engine import _in_dirs
 
@@ -20,9 +21,30 @@ class Navigator:
     def __init__(self, socket, map_engine):
         self.s = socket
         self.M = map_engine
-        self.current_rid = None    # tracked position
-        self.last_dir = None       # direction we just moved
-        self.stuck_count = 0       # consecutive failed identifications
+        self.current_rid = None        # tracked position (room id)
+        self.current_region = None     # tracked region prefix (e.g. "d/city")
+        self.last_dir = None           # direction we just moved
+        self.stuck_count = 0           # consecutive failed identifications
+
+    def _update_region(self, rid):
+        """Update current_region from a room id. Log transitions."""
+        if rid is None:
+            return
+        new_region = region_of(rid)
+        if new_region != self.current_region:
+            old_name = region_name_of(self.current_rid) if self.current_rid else "?"
+            new_name = region_name_of(rid)
+            print(f"  [REGION] {old_name} → {new_name} ({new_region})")
+            # Sanity check: is this transition plausible?
+            if self.current_region and old_name != "?":
+                old_name_key = REGIONS.get(self.current_region, self.current_region)
+                if (old_name_key not in REGION_NEIGHBORS or
+                    new_name not in REGION_NEIGHBORS.get(old_name_key, set()) and
+                    new_name != old_name_key):
+                    # Not necessarily wrong (maybe crossing through unmapped region)
+                    # but worth noting
+                    print(f"  [REGION] note: {old_name}→{new_name} not in neighbor list")
+            self.current_region = new_region
 
     def look_and_identify(self, hint_id=None, area_dirs=None):
         """Look at current room and identify it. Returns (rid, desc, short, exits)."""
@@ -31,9 +53,11 @@ class Navigator:
         short = parse_short(desc)
         exits = parse_exits(desc)
         rid = self.M.identify(short, exits_seen=exits, prev_id=self.current_rid,
-                               came_dir=self.last_dir, area_dirs=area_dirs)
+                               came_dir=self.last_dir, area_dirs=area_dirs,
+                               current_region=self.current_region)
         if rid:
             self.current_rid = rid
+            self._update_region(rid)
             self.M.record_identification(short, exits, rid)
             self.stuck_count = 0
         return rid, desc, short, exits
@@ -131,6 +155,7 @@ class Navigator:
                 if actual_short == expected_short:
                     # Success! Update position without looking
                     self.current_rid = expected_next
+                    self._update_region(expected_next)
                     self.last_dir = d
                     self.M.record_identification(actual_short, actual_exits, expected_next)
                     self.stuck_count = 0
@@ -139,7 +164,8 @@ class Navigator:
                     # Mismatch — try to identify from the response
                     rid = self.M.identify(actual_short, exits_seen=actual_exits,
                                           prev_id=self.current_rid, came_dir=d,
-                                          area_dirs=area_dirs)
+                                          area_dirs=area_dirs,
+                                          current_region=self.current_region)
                     if rid:
                         self.current_rid = rid
                         self.last_dir = d

@@ -14,7 +14,8 @@ from collections import deque, defaultdict
 # Use config from same directory
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from config import MAP_PATH, FINDMAP_PATH, LANDMARKS, REVERSE, SPECIAL_EDGES, EXIT_TOKENS
+from config import (MAP_PATH, FINDMAP_PATH, LANDMARKS, REVERSE, SPECIAL_EDGES,
+                    EXIT_TOKENS, REGIONS, region_of, region_name_of)
 
 
 class XYJMap:
@@ -51,10 +52,14 @@ class XYJMap:
 
         # ── Build short name index ─────────────────────────────────────
         self.by_short = defaultdict(list)
+        # Region-scoped index: by_short_in_region[region_prefix][short] = [rid, ...]
+        self.by_short_in_region = defaultdict(lambda: defaultdict(list))
         for rid, v in self.g.items():
             s = v.get("short", "")
             if s:
                 self.by_short[s].append(rid)
+                rprefix = region_of(rid)
+                self.by_short_in_region[rprefix][s].append(rid)
 
         # ── Build adjacency graph ───────────────────────────────────────
         # adj[u] = { neighbor_id: direction_to_walk_from_u }
@@ -160,10 +165,11 @@ class XYJMap:
 
     # ── Room Identification ────────────────────────────────────────────
     def identify(self, short, exits_seen=None, prev_id=None, came_dir=None,
-                area_dirs=None):
+                area_dirs=None, current_region=None):
         """Identify current room using multiple strategies.
 
         Priority:
+          0. Region-scoped lookup: if current_region given, search only within it
           1. If prev_id + came_dir: follow the edge from prev_id
           2. Check confidence cache (previously verified matches)
           3. Exits fingerprint match (short + exits = unique)
@@ -173,6 +179,54 @@ class XYJMap:
 
         Returns room_id or None.
         """
+        # ── Strategy 0: region-scoped lookup ──────────────────────────
+        # If we know our current region, search only within it first.
+        # This is the "I'm in 长安, so '街道' means one of 3 rooms" optimization.
+        if current_region:
+            regional_cands = self.by_short_in_region.get(current_region, {}).get(short, [])
+            if regional_cands:
+                cands = regional_cands
+                # Region found — narrow down within region
+                if len(cands) == 1:
+                    return cands[0]
+                # Continue with exits fingerprint, but scoped to region
+                if exits_seen:
+                    es = set(exits_seen)
+                    exact = [c for c in cands if set(self.exits_of(c)) == es]
+                    if len(exact) == 1:
+                        self._id_cache[short][frozenset(es)] = exact[0]
+                        return exact[0]
+                    sub = [c for c in cands
+                           if self.exits_of(c) and set(self.exits_of(c)).issubset(es)]
+                    if len(sub) == 1:
+                        self._id_cache[short][frozenset(es)] = sub[0]
+                        return sub[0]
+                    sup = [c for c in cands
+                           if self.exits_of(c) and es.issubset(set(self.exits_of(c)))]
+                    if len(sup) == 1:
+                        self._id_cache[short][frozenset(es)] = sup[0]
+                        return sup[0]
+                    # Best Jaccard within region
+                    best, best_score = None, -1
+                    for c in cands:
+                        cd = set(self.exits_of(c))
+                        score = len(cd & es) / max(len(cd | es), 1)
+                        if score > best_score:
+                            best, best_score = c, score
+                    return best
+                # No exits info, but region-scoped — use prev_id if available
+                if prev_id and came_dir:
+                    target = self.exits_of(prev_id).get(came_dir)
+                    if target and self.short_of(target) == short:
+                        return target
+                    for nb, dd in self.adj.get(prev_id, {}).items():
+                        if dd == came_dir and self.short_of(nb) == short:
+                            return nb
+                return cands[0]  # best guess within region
+            # Short name not found in current region — fall through to global search
+            # This might mean we crossed a region boundary without noticing
+
+        # ── Global fallback (original logic) ───────────────────────────
         cands = self.by_short.get(short, [])
         if not cands:
             return None
