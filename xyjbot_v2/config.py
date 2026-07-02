@@ -193,3 +193,6 @@ CN_DIR = {
 
 # ── Ourhome escape ─────────────────────────────────────────────────────
 OURHOME_PREFIX = "d/ourhome/"
+
+# ── Dangerous areas (skip missions here if unprepared) ─────────────────
+DANGEROUS_DIRS = ("d/westway", "d/qujing")

@@ -69,6 +69,18 @@ class Navigator:
         # Handle 马盗 (road bandit)
         if "马盗" in r:
             self._handle_madao(r)
+        # Handle locked doors / gates — try to open and re-step
+        if not moved and any(w in r for w in ("打开", "石门", "门", "开门", "关着")):
+            print(f"  [nav] door detected — trying to open")
+            open_cmds = ["open shimen", "open men", "open door", "open gate",
+                         "open shibi", "push men", "knock men"]
+            for cmd in open_cmds:
+                ro = m(self.s, cmd, q=1.0)
+                if any(w in ro for w in ("打开了", "开了", "推开", "轰")):
+                    print(f"  [nav] opened with: {cmd}")
+                    r = m(self.s, direction, q=STEP_TIMEOUT)
+                    moved = not any(w in r for w in MOVE_FAIL)
+                    break
         return r, moved
 
     def _handle_madao(self, desc):
@@ -182,7 +194,9 @@ class Navigator:
                     print(f"  [nav] mismatch: expected '{expected_short}', got '{actual_short}'")
                     print(f"  [nav] unknown room — discovering! exits={actual_exits}")
                     new_rid = self._generate_room_id(actual_short)
-                    self.M.add_discovered_room(new_rid, actual_short, actual_exits,
+                    # Convert exits set → dict for map storage
+                    exits_dict = {d: "" for d in actual_exits}
+                    self.M.add_discovered_room(new_rid, actual_short, exits_dict,
                                                from_rid=self.current_rid, direction=d)
                     if self.current_rid:
                         self.M.mark_edge_broken(self.current_rid, expected_next, d)

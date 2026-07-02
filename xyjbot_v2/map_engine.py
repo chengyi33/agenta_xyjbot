@@ -296,7 +296,7 @@ class XYJMap:
             return
 
         # First sighting — add to pending only
-        print(f"  [MAP] room first sighting (pending): {rid} ({short}) exits={list(exits.keys())}")
+        print(f"  [MAP] room first sighting (pending): {rid} ({short}) exits={list(exits) if isinstance(exits, set) else list(exits.keys())}")
         self._pending_rooms[rid] = {
             "short": short, "exits": exits,
             "from_rid": from_rid, "direction": direction,

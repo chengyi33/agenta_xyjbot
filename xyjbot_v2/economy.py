@@ -127,7 +127,7 @@ def eat_drink(s):
     hr = m(s, "hp", q=1.5)
     hp = parse_hp(hr)
     still_low = set()
-    for label, cmd in [("食物", "eat gou rou"), ("饮水", "drink jiudai")]:
+    for label, cmd in [("食物", "eat gourou"), ("饮水", "drink jiudai")]:
         if label not in hp:
             continue
         cur, mx = hp[label]
@@ -222,7 +222,7 @@ def smart_eat_drink(s, nav):
     if needs_f:
         print("  [FOOD] buying gou rou")
         for _ in range(8):
-            r = m(s, "buy gou rou from xiao er", q=0.6)
+            r = m(s, "buy gourou from xiao er", q=0.6)
             if any(w in r for w in ("钱不够", "没有卖", "什么")):
                 break
 
