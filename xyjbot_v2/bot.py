@@ -232,8 +232,29 @@ def main():
 
         print(f"\n[ATTEMPT {attempt+1}] kills={kills}/{TARGET_KILLS}")
 
+        # ── Position re-confirm: look to validate current_rid ─────────
+        try:
+            rid_check, _, _, _ = nav.look_and_identify()
+            if rid_check is None:
+                print("  [LOOP] can't identify position — localizing")
+                nav._localize_and_retry(None)
+            elif not any(rid_check.startswith(d) for d in ACCESSIBLE_DIRS):
+                print(f"  [LOOP] inaccessible region {rid_check} — quit+relog")
+                s = recover_to_kezhan(s, nav)
+                nav.s = s
+        except OSError:
+            print("  [LOOP] socket dead — reconnecting")
+            s = recover_to_kezhan(s, nav)
+            nav.s = s
+
         # ── MISSION: ask Yuan ─────────────────────────────────────────
-        name, ids, region, landmark, t_start, cleared = ask_yuan(s, nav)
+        try:
+            name, ids, region, landmark, t_start, cleared = ask_yuan(s, nav)
+        except OSError:
+            print("  [LOOP] socket died during ask_yuan — reconnecting")
+            s = recover_to_kezhan(s, nav)
+            nav.s = s
+            continue
 
         # Check if previous mission was completed (除尽)
         if cleared and pending_guai:

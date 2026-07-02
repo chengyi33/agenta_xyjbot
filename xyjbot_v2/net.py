@@ -63,23 +63,51 @@ def m(s, cmd, q=1.0, log_path=None):
 
 
 # ── Room Parsing ──────────────────────────────────────────────────────
-# Short names that should be treated as garbage (confusion responses)
-_GARBAGE_SHORTS = {"什么", "什么？", "嗯？", "哦", "嗯", "啊", "哦？", "啊？"}
+# Chinese sentence-ending punctuation — room names never contain these
+_NOT_ROOM_CHARS = set("。！？“”《》（），")
+# NPC-speech indicators (pronouns/verbs common in NPC messages but rare in room names)
+_NPC_PATTERNS = re.compile(
+    r"你给|他给|小跟|跟班|送给|给你|给我|说道|问道|呐道|道："
+)
+
+# Starters that indicate prose/system lines, not room names
+_PROSE_STARTERS = (
+    "你", "我", "他", "她", "它", "这", "那",  # pronouns
+    "被", "就",    # common prose starters
+    "出口",   # exits line
+    "姓名",   # score line
+    "气血",   # hp line
+    "食物",   # food line
+    "冯由",   # coin balance line
+)
+
+def _is_room_name(line):
+    """Heuristic: True if this line looks like a MUD room short name."""
+    if not line or len(line) <= 1:
+        return False
+    # Reject if any sentence-ending punctuation present
+    if any(c in line for c in _NOT_ROOM_CHARS):
+        return False
+    # Reject if too long (room names are typically 2-12 chars)
+    if len(line) > 15:
+        return False
+    # Reject lines that start with pronouns or common prose starters
+    if any(line.startswith(s) for s in _PROSE_STARTERS):
+        return False
+    # Reject obvious NPC speech patterns
+    if _NPC_PATTERNS.search(line):
+        return False
+    return True
 
 def parse_short(desc):
     """Extract room short name from the first non-empty, non-prompt line."""
-    for line in desc.split("\n")[:6]:
+    for line in desc.split("\n")[:8]:
         line = line.strip()
         if line and not line.startswith(">"):
             # Room header: "南海之滨 - description" or "南海之滨－"
-            line = re.split(r"\s*[-－]\s*", line)[0].strip()
-            # Sanity check: reject known garbage responses
-            if line in _GARBAGE_SHORTS:
-                continue
-            # Reject single-char or question-only lines
-            if len(line) <= 1 or line in ("？", "！", "。"):
-                continue
-            return line
+            candidate = re.split(r"\s*[-－]\s*", line)[0].strip()
+            if _is_room_name(candidate):
+                return candidate
     return ""
 
 
