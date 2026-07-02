@@ -21,44 +21,52 @@
       "last_failed": 1782978611.968613,
       "permanent": false
     },
-    "d/gao/lu1|d/changan/wroad3": {
-      "direction": "east",
-      "failures": 1,
-      "first_failed": 1782978667.186429,
-      "last_failed": 1782978667.186431,
-      "permanent": false
-    },
     "d/gao/road1|d/gao/zhyuan": {
       "direction": "north",
       "failures": 1,
-      "first_failed": 1782978777.682295,
-      "last_failed": 1782978777.6823,
+      "first_failed": 1782978649.255842,
+      "last_failed": 1782978649.255846,
       "permanent": false
     },
-    "d/gao/lu1|d/gao/zhyuan": {
+    "d/gao/gate|d/gao/zhyuan": {
       "direction": "north",
-      "failures": 2,
-      "first_failed": 1782978809.915669,
-      "last_failed": 1782978815.466794,
+      "failures": 1,
+      "first_failed": 1782978649.945854,
+      "last_failed": 1782978649.945856,
       "permanent": false
     },
-    "d/gao/lu1|d/gao/lu2": {
-      "direction": "west",
+    "d/city/tianjiantai|d/city/xuanwu-n1": {
+      "direction": "east",
       "failures": 1,
-      "first_failed": 1782978810.994881,
-      "last_failed": 1782978810.994886,
+      "first_failed": 1782978701.173621,
+      "last_failed": 1782978701.173624,
+      "permanent": false
+    },
+    "d/gao/lu1|d/changan/wroad3": {
+      "direction": "east",
+      "failures": 1,
+      "first_failed": 1782979026.025784,
+      "last_failed": 1782979026.025789,
       "permanent": false
     }
   },
   "discovered_rooms": {},
   "discovered_edges": {},
   "pending_rooms": {
-    "d/gao/discovered_room_78667": {
+    "d/gao/discovered_room_78649": {
       "short": "",
       "exits": {},
-      "from_rid": "d/gao/lu1",
+      "from_rid": "d/gao/gate",
+      "direction": "north",
+      "first_seen": "2026-07-02T00:50:49.945435",
+      "confirmations": 1
+    },
+    "d/city/discovered_room_78701": {
+      "short": "",
+      "exits": {},
+      "from_rid": "d/city/tianjiantai",
       "direction": "east",
-      "first_seen": "2026-07-02T00:51:07.182616",
+      "first_seen": "2026-07-02T00:51:41.173129",
       "confirmations": 1
     }
   },
@@ -77,16 +85,8 @@
     },
     "d/gao/road1|d/gao/road1": {
       "direction": "north",
-      "first_seen": "2026-07-02T00:52:57.682904"
-    },
-    "d/gao/lu1|d/gao/lu1": {
-      "direction": "north",
-      "first_seen": "2026-07-02T00:53:29.916242"
-    },
-    "d/gao/lu1|d/gao/road4": {
-      "direction": "west",
-      "first_seen": "2026-07-02T00:53:30.995469"
+      "first_seen": "2026-07-02T00:50:49.256444"
     }
   },
-  "saved_at": "2026-07-02T00:53:35.466841"
+  "saved_at": "2026-07-02T00:57:06.025809"
 }

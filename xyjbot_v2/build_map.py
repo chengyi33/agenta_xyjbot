@@ -50,6 +50,9 @@ def resolve_target(expr, file_dir_id):
         val = mq.group(1)
         if val.startswith("/"):
             return val.lstrip("/")
+        # Absolute LPC paths like "d/gao/lu1" — don't prepend file_dir_id
+        if re.match(r'^[a-z]+/', val):
+            return val
         if "/" in val:
             return f"{file_dir_id}/{val.strip('/')}"
         return f"{file_dir_id}/{val}"
@@ -166,6 +169,27 @@ def main():
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=None, separators=(",", ":"))
     print(f"\nWritten to {OUT} ({os.path.getsize(OUT)//1024}KB)")
+
+    # ── Post-build map corrections ───────────────────────────────
+    # Fix known discrepancies between LPC source and live server.
+    # These are applied after building the map JSON.
+    corrections = [
+        # wroad3→west goes to road4 (not lu1) on live server
+        # Only fix wroad3's west edge; don't touch road4's exits (east=road3 stays)
+        ("d/changan/wroad3", "west", "d/gao/road4"),
+    ]
+    changed = 0
+    for src, direction, new_dst in corrections:
+        if src in rooms:
+            if "exits" not in rooms[src] or not isinstance(rooms[src]["exits"], dict):
+                rooms[src]["exits"] = {}
+            rooms[src]["exits"][direction] = new_dst
+            changed += 1
+            print(f"  CORRECTION: {src} --{direction}--> {new_dst}")
+    if changed:
+        with open(OUT, "w", encoding="utf-8") as f:
+            json.dump(output, f, ensure_ascii=False, indent=None, separators=(",", ":"))
+        print(f"Applied {changed} map corrections")
 
 
 if __name__ == "__main__":
