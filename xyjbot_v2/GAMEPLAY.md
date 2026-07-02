@@ -319,11 +319,6 @@ Some regions require fly/dive/special access. Bot detects no path in graph → w
 | **Wimpy flee** (你逃跑) | **Still in room** — waiting | Rest to >80% HP, eat/drink, go back and finish |
 | **KO / passed out** (清醒) | **Gone** — mission guai despawns | Wait for timer to expire, ask Yuan for new mission |
 
-### 马盗 (Road Bandit)
-Appears on roads during navigation. **Pay immediately** before doing anything else:
-`give ma dao 10 silver`
-Delay = combat starts = likely death.
-
 ### Combat Limits
 - Wimpy = 10 (flee at 10% HP)
 - Combat timeout = 210 seconds max per fight
@@ -338,16 +333,35 @@ Delay = combat starts = likely death.
 - `ask da ye about gold` at kezhan → one-time ~3 gold (300两) — first-run only
 - Keep **50两 on hand**; deposit rest at bank
 - Basic gear costs ~15两 (blade 5两 + shield 10两)
+- **Always deposit gold at bank** — carrying gold into combat is risky
+- **Convert gold to silver** when needed: `convert 1 gold to silver` (at bank)
+- Silver is what NPCs accept (马盗, shops, etc.)
 
 ### Banking (相记钱庄, d/city/bank)
+Path from hub (十字街头): `west → north → west → south`
+
 | Command | Effect |
 |---------|--------|
 | `account` | Check balance |
-| `deposit gold` | Convert gold coins → account |
-| `deposit N silver` | Deposit N 两 |
-| `withdraw N silver` | Withdraw N 两 |
+| `deposit gold` | Deposit all gold coins into account |
+| `deposit N silver` | Deposit N 两 silver |
+| `withdraw N silver` | Withdraw N 两 silver |
+| `convert 1 gold to silver` | Convert gold → 100 silver (do this when need silver for NPCs) |
 
-Always deposit before risky fights. After death with no money: bank → `account` → `withdraw N silver` → re-gear.
+**Workflow:**
+1. After earning money (kills, da ye gold): go to bank
+2. `deposit gold` — put all gold coins into account
+3. `convert 1 gold to silver` if you need silver on hand (for 马盗, food, gear)
+4. Keep ~50两 silver on hand; deposit excess silver
+5. After death with no money: `account` → `withdraw N silver` → re-gear
+
+### 马盗 (Road Bandit)
+Appears on roads (especially 长安西/西行路) during navigation.
+**Pay immediately** — silver only, not gold:
+```
+give 10 silver to ma dao
+```
+Delay = combat starts = likely death. Always carry at least 10两 silver for this.
 
 ### Shops
 

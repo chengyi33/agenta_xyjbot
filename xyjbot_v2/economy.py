@@ -248,26 +248,51 @@ def wait_full_hp(s, tries=40):
 
 
 def bank_deposit(s, nav):
-    """Deposit excess money."""
+    """Deposit excess money. Convert gold to silver first.
+
+    Bank path from hub: west → north → west → south (d/city/bank)
+    """
     nav.goto(LANDMARKS["bank"])
+    # Deposit all gold coins into account first
     m(s, "deposit gold", q=2.0)
+    # Convert gold to silver if we have gold on hand (for NPC payments)
+    sc = m(s, "score", q=2.0)
+    has_gold = re.search(r"黄金[^0-9]*(\d+)", sc)
+    if has_gold and int(has_gold.group(1)) > 0:
+        gold_amt = int(has_gold.group(1))
+        print(f"  [BANK] converting {gold_amt} gold → {gold_amt * 100} silver")
+        m(s, f"convert {gold_amt} gold to silver", q=2.0)
+    # Check silver on hand
     sc = m(s, "score", q=2.0)
     on_hand = _money_from_score(sc)
     if on_hand <= KEEP_ON_HAND:
+        # Withdraw enough to keep 50两 on hand
+        if on_hand < KEEP_ON_HAND:
+            need = int(KEEP_ON_HAND - on_hand)
+            m(s, f"withdraw {need} silver", q=2.0)
+            print(f"  [BANK] withdrew {need}两 for expenses")
         return
     to_deposit = int(on_hand - KEEP_ON_HAND)
     m(s, f"deposit {to_deposit} silver", q=2.0)
-    print(f"  [BANK] deposited {to_deposit}两")
+    print(f"  [BANK] deposited {to_deposit}两 (kept {KEEP_ON_HAND} on hand)")
 
 
 def _bank_withdraw(s, nav, need=20):
-    """Withdraw from bank if needed."""
+    """Withdraw from bank if needed. Convert gold to silver first."""
     sc = m(s, "score", q=2.0)
     on_hand = _money_from_score(sc)
     if on_hand >= need:
         return on_hand
     nav.goto(LANDMARKS["bank"])
+    # Deposit any gold coins first
     m(s, "deposit gold", q=2.0)
+    # Convert gold to silver if available
+    sc = m(s, "score", q=2.0)
+    has_gold = re.search(r"黄金[^0-9]*(\d+)", sc)
+    if has_gold and int(has_gold.group(1)) > 0:
+        gold_amt = int(has_gold.group(1))
+        print(f"  [BANK] converting {gold_amt} gold → silver")
+        m(s, f"convert {gold_amt} gold to silver", q=2.0)
     sc = m(s, "score", q=2.0)
     on_hand = _money_from_score(sc)
     if on_hand >= need:

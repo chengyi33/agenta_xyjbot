@@ -72,11 +72,11 @@ class Navigator:
         return r, moved
 
     def _handle_madao(self, desc):
-        """Pay 马盗 (road bandit) immediately if demanding money."""
+        """Pay 马盗 (road bandit) immediately — silver only, not gold."""
         if "马盗" in desc and ("要钱" in desc or "买路钱" in desc or
                                  "不给钱" in desc or any(c in desc for c in COMBAT_SIGNS)):
             print("  [马盗] paying 10 silver")
-            m(self.s, "give ma dao 10 silver", q=2.0)
+            m(self.s, "give 10 silver to ma dao", q=2.0)
             time.sleep(1)
 
     def goto(self, goal_id, area_dirs=None, max_steps=200):
