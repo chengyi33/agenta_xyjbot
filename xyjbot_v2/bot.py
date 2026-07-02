@@ -206,6 +206,8 @@ def main():
     nf_name, nf_count = None, 0
     _lm_name, _, _, _, _ = load_mission()
     pending_guai = _lm_name
+    session_stuck_count = 0      # consecutive stuck events this session
+    SESSION_STUCK_LIMIT = 5      # rollback map if stuck this many times
 
     for attempt in range(120):
         if kills >= TARGET_KILLS:
@@ -344,6 +346,7 @@ def main():
             kills += 1
             total = tally_add(1)
             pending_guai = None
+            session_stuck_count = 0   # successful mission = navigation is working fine
             print(f"\n  *** KILL #{kills} this run: {name} | LIFETIME TOTAL: {total} ***")
             time.sleep(2)
             drain(s, quiet=1.0, maxt=3.0)
@@ -362,6 +365,15 @@ def main():
 
         elif result == "stuck":
             # Navigation got stuck — decide whether to quit+relog based on gear
+            session_stuck_count += 1
+            print(f"  [STUCK] session stuck count: {session_stuck_count}/{SESSION_STUCK_LIMIT}")
+
+            # Too many stucks this session? Map overrides might be poisoned — rollback
+            if session_stuck_count >= SESSION_STUCK_LIMIT:
+                print("  [STUCK] too many stucks — rolling back map overrides!")
+                M.rollback_overrides()
+                session_stuck_count = 0
+
             if gear_expendable:
                 print("  [STUCK] gear is basic (replaceable for ~15两) — quit+relog to kezhan")
                 s = recover_to_kezhan(s, nav)

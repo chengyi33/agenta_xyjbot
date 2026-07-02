@@ -120,16 +120,27 @@ class XYJMap:
         self._id_cache = defaultdict(dict)
 
         # ── Live map overrides: discovered/fixed during gameplay ────────
-        # Loaded from map_overrides.json, persisted on every change
+        # All overrides use confidence scoring:
+        #   - New discoveries start "pending" (don't affect navigation)
+        #   - After confirmation (2nd visit / round-trip) → promoted to "confirmed"
+        #   - Broken edges are temporary (retry after 24h), permanent after 3 failures
         self._overrides_path = os.path.join(os.path.dirname(MAP_PATH), "map_overrides.json")
-        self._broken_edges = set()       # {(from_rid, to_rid)} — edges that don't work
-        self._discovered_rooms = {}      # {rid: {"short": str, "exits": {dir: rid}}}
-        self._discovered_edges = []      # [(from_rid, to_rid, dir)] — new edges found
+        self._bak_path = self._overrides_path + ".bak"
+
+        # Confirmed overrides (applied to live map)
+        self._broken_edges = {}         # {(from, to): {direction, failures, first_failed, permanent}}
+        self._discovered_rooms = {}     # {rid: {short, exits, confidence, first_seen, last_confirmed}}
+        self._discovered_edges = {}     # {(from, to): {direction, confidence, confirmed, first_seen}}
+
+        # Pending (NOT applied to live map until confirmed)
+        self._pending_rooms = {}        # {rid: {short, exits, first_seen, confirmations}}
+        self._pending_edges = {}        # {(from, to): {direction, first_seen}}
+
         self._load_overrides()
 
-        # Apply discovered rooms to the graph
+        # Apply CONFIRMED overrides only to the graph
         for rid, info in self._discovered_rooms.items():
-            if rid not in self.g:
+            if info.get("confidence", 0) >= 2 and rid not in self.g:
                 self.g[rid] = {"short": info.get("short", ""), "exits": info.get("exits", {})}
                 s = info.get("short", "")
                 if s:
@@ -137,13 +148,26 @@ class XYJMap:
                     rprefix = region_of(rid)
                     self.by_short_in_region[rprefix][s].append(rid)
 
-        # Apply discovered edges to adjacency
-        for u, t, d in self._discovered_edges:
-            self.adj[u][t] = d
+        for key, info in self._discovered_edges.items():
+            if info.get("confidence", 0) >= 2:
+                u, t = key
+                self.adj[u][t] = info["direction"]
 
-        # Remove broken edges from adjacency
-        for u, t in self._broken_edges:
-            self.adj.get(u, {}).pop(t, None)
+        # Remove broken edges from adjacency (only non-expired or permanent)
+        import datetime as _dt
+        now = _dt.datetime.now().timestamp()
+        for key, info in self._broken_edges.items():
+            u, t = key
+            failures = info.get("failures", 1)
+            permanent = info.get("permanent", False)
+            first_failed = info.get("first_failed", now)
+            age = now - first_failed
+            # Temporary breaks expire after 24h, unless permanent or 3+ failures
+            if permanent or failures >= 3 or age < 86400:
+                self.adj.get(u, {}).pop(t, None)
+            else:
+                # Expired — remove from broken, allow retry
+                del self._broken_edges[key]
 
     def _load_overrides(self):
         """Load map overrides from JSON file."""
@@ -151,68 +175,176 @@ class XYJMap:
             return
         try:
             data = json.load(open(self._overrides_path, encoding="utf-8"))
-            self._broken_edges = set(tuple(e) for e in data.get("broken_edges", []))
+            self._broken_edges = {tuple(k.split("|")): v
+                                  for k, v in data.get("broken_edges", {}).items()}
             self._discovered_rooms = data.get("discovered_rooms", {})
-            self._discovered_edges = [tuple(e) for e in data.get("discovered_edges", [])]
-            print(f"  [MAP] loaded overrides: {len(self._broken_edges)} broken, "
-                  f"{len(self._discovered_rooms)} rooms, {len(self._discovered_edges)} edges")
+            self._discovered_edges = {tuple(k.split("|")): v
+                                      for k, v in data.get("discovered_edges", {}).items()}
+            self._pending_rooms = data.get("pending_rooms", {})
+            self._pending_edges = {tuple(k.split("|")): v
+                                   for k, v in data.get("pending_edges", {}).items()}
+            print(f"  [MAP] overrides: {len(self._broken_edges)} broken, "
+                  f"{len(self._discovered_rooms)} confirmed rooms, "
+                  f"{len(self._pending_rooms)} pending, "
+                  f"{len(self._discovered_edges)} confirmed edges")
         except Exception as e:
             print(f"  [MAP] failed to load overrides: {e}")
 
     def _save_overrides(self):
-        """Persist map overrides to JSON file."""
+        """Persist map overrides to JSON file, with .bak rollback safety."""
+        import shutil, datetime as _dt
         data = {
-            "broken_edges": [list(e) for e in self._broken_edges],
+            "broken_edges":    {f"{u}|{t}": v for (u, t), v in self._broken_edges.items()},
             "discovered_rooms": self._discovered_rooms,
-            "discovered_edges": [list(e) for e in self._discovered_edges],
+            "discovered_edges": {f"{u}|{t}": v for (u, t), v in self._discovered_edges.items()},
+            "pending_rooms":    self._pending_rooms,
+            "pending_edges":    {f"{u}|{t}": v for (u, t), v in self._pending_edges.items()},
+            "saved_at": _dt.datetime.now().isoformat(),
         }
         try:
+            # Backup before write
+            if os.path.exists(self._overrides_path):
+                shutil.copy2(self._overrides_path, self._bak_path)
             json.dump(data, open(self._overrides_path, "w", encoding="utf-8"),
                       ensure_ascii=False, indent=2)
         except Exception as e:
             print(f"  [MAP] failed to save overrides: {e}")
 
+    def rollback_overrides(self):
+        """Revert to last known-good overrides backup."""
+        if not os.path.exists(self._bak_path):
+            print("  [MAP] no backup to rollback to")
+            return False
+        import shutil
+        shutil.copy2(self._bak_path, self._overrides_path)
+        print("  [MAP] rolled back to backup overrides")
+        # Reload
+        self._broken_edges.clear()
+        self._discovered_rooms.clear()
+        self._discovered_edges.clear()
+        self._pending_rooms.clear()
+        self._pending_edges.clear()
+        self._load_overrides()
+        return True
+
     def mark_edge_broken(self, from_rid, to_rid, direction=None):
-        """Mark an edge as broken/conditional. Re-BFS will avoid it."""
+        """Mark an edge as broken/conditional.
+        Temporary (24h) on first failure, permanent after 3 failures.
+        """
+        import datetime as _dt
         key = (from_rid, to_rid)
-        if key not in self._broken_edges:
-            self._broken_edges.add(key)
-            # Remove from adjacency immediately
-            self.adj.get(from_rid, {}).pop(to_rid, None)
-            print(f"  [MAP] marked edge broken: {from_rid} → {to_rid} ({direction})")
-            self._save_overrides()
+        existing = self._broken_edges.get(key, {})
+        failures = existing.get("failures", 0) + 1
+        self._broken_edges[key] = {
+            "direction": direction,
+            "failures": failures,
+            "first_failed": existing.get("first_failed", _dt.datetime.now().timestamp()),
+            "last_failed": _dt.datetime.now().timestamp(),
+            "permanent": failures >= 3,
+        }
+        # Remove from adjacency immediately
+        self.adj.get(from_rid, {}).pop(to_rid, None)
+        status = "PERMANENT" if failures >= 3 else f"temp (failure #{failures})"
+        print(f"  [MAP] edge broken [{status}]: {from_rid} → {to_rid} ({direction})")
+        self._save_overrides()
 
     def add_discovered_room(self, rid, short, exits, from_rid=None, direction=None):
-        """Add a room not in the original map. Link to from_rid if given."""
-        if rid in self.g and rid not in self._discovered_rooms:
-            # Room exists in map but wasn't linked — just add the edge
-            if from_rid and direction:
-                self.add_discovered_edge(from_rid, rid, direction)
+        """Add a discovered room. Requires 2 confirmations before affecting navigation.
+
+        First sighting → pending (no map effect)
+        Second sighting (same short+exits) → confirmed → added to live map
+        """
+        import datetime as _dt
+        now = _dt.datetime.now().isoformat()
+
+        # Check if already confirmed
+        if rid in self._discovered_rooms:
+            info = self._discovered_rooms[rid]
+            info["confidence"] = info.get("confidence", 1) + 1
+            info["last_confirmed"] = now
+            print(f"  [MAP] room re-confirmed: {rid} ({short}) conf={info['confidence']}")
+            self._save_overrides()
             return
 
-        # New room
-        self._discovered_rooms[rid] = {"short": short, "exits": exits}
-        if rid not in self.g:
-            self.g[rid] = {"short": short, "exits": dict(exits)}
-            if short:
-                self.by_short[short].append(rid)
-                rprefix = region_of(rid)
-                self.by_short_in_region[rprefix][short].append(rid)
-        print(f"  [MAP] discovered new room: {rid} ({short}) exits={list(exits.keys())}")
+        # Check if in pending
+        if rid in self._pending_rooms:
+            pending = self._pending_rooms[rid]
+            # Same short name and similar exits → confirm!
+            if pending.get("short") == short:
+                pending["confirmations"] = pending.get("confirmations", 1) + 1
+                if pending["confirmations"] >= 2:
+                    print(f"  [MAP] room CONFIRMED after {pending['confirmations']} visits: {rid} ({short})")
+                    self._discovered_rooms[rid] = {
+                        "short": short, "exits": exits,
+                        "confidence": 2,
+                        "first_seen": pending.get("first_seen", now),
+                        "last_confirmed": now,
+                    }
+                    del self._pending_rooms[rid]
+                    # Now apply to live map
+                    if rid not in self.g:
+                        self.g[rid] = {"short": short, "exits": dict(exits)}
+                        if short:
+                            self.by_short[short].append(rid)
+                            rprefix = region_of(rid)
+                            self.by_short_in_region[rprefix][short].append(rid)
+                    if from_rid and direction:
+                        self.add_discovered_edge(from_rid, rid, direction)
+                else:
+                    print(f"  [MAP] room pending ({pending['confirmations']}/2): {rid} ({short})")
+                self._save_overrides()
+            return
 
-        # Link from previous room
-        if from_rid and direction:
-            self.add_discovered_edge(from_rid, rid, direction)
-
+        # First sighting — add to pending only
+        print(f"  [MAP] room first sighting (pending): {rid} ({short}) exits={list(exits.keys())}")
+        self._pending_rooms[rid] = {
+            "short": short, "exits": exits,
+            "from_rid": from_rid, "direction": direction,
+            "first_seen": now, "confirmations": 1,
+        }
         self._save_overrides()
 
     def add_discovered_edge(self, from_rid, to_rid, direction):
-        """Add a new edge between two known rooms."""
-        edge = (from_rid, to_rid, direction)
-        if edge not in self._discovered_edges:
-            self._discovered_edges.append(edge)
+        """Add a new edge. Requires round-trip confirmation before affecting navigation.
+
+        First direction (A→B) → pending
+        Reverse confirmed (B→A exists) OR second traversal → confirmed → applied
+        """
+        import datetime as _dt
+        now = _dt.datetime.now().isoformat()
+        key = (from_rid, to_rid)
+        rev_key = (to_rid, from_rid)
+
+        # Already confirmed
+        if key in self._discovered_edges:
+            info = self._discovered_edges[key]
+            info["confidence"] = info.get("confidence", 1) + 1
+            print(f"  [MAP] edge re-confirmed: {from_rid} --{direction}--> {to_rid} conf={info['confidence']}")
+            self._save_overrides()
+            return
+
+        # Check if reverse direction already confirmed (round-trip!)
+        rev_confirmed = (rev_key in self._discovered_edges and
+                         self._discovered_edges[rev_key].get("confidence", 0) >= 2)
+        # Or second traversal of same edge
+        pending = self._pending_edges.get(key)
+        second_traversal = pending is not None and pending.get("direction") == direction
+
+        if rev_confirmed or second_traversal:
+            print(f"  [MAP] edge CONFIRMED: {from_rid} --{direction}--> {to_rid}")
+            self._discovered_edges[key] = {
+                "direction": direction, "confidence": 2,
+                "first_seen": pending.get("first_seen", now) if pending else now,
+                "last_confirmed": now,
+            }
+            self._pending_edges.pop(key, None)
+            # Apply to live map
             self.adj[from_rid][to_rid] = direction
-            print(f"  [MAP] discovered new edge: {from_rid} --{direction}--> {to_rid}")
+            self._save_overrides()
+        else:
+            # First time — add to pending
+            print(f"  [MAP] edge first sighting (pending): {from_rid} --{direction}--> {to_rid}")
+            self._pending_edges[key] = {"direction": direction, "first_seen": now}
             self._save_overrides()
 
     def _load_findmap(self, path=FINDMAP_PATH):
