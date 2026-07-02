@@ -10,6 +10,8 @@ from config import (HOST, PORT, USER, PASS, EXIT_TOKENS, MOVE_FAIL,
                     DEATH_SIGNS, COMBAT_SIGNS, LOOK_TIMEOUT, STEP_TIMEOUT,
                     DRAIN_QUIET)
 
+KICK_SIGN = "取代你所控制的人物"
+
 
 def drain(s, quiet=DRAIN_QUIET, maxt=8.0):
     """Read all available data from socket. Returns bytes."""
@@ -47,7 +49,11 @@ def clean(b):
 def send(s, cmd, quiet=1.0):
     """Send a command and read the response."""
     s.sendall((cmd + "\r\n").encode())
-    return clean(drain(s, quiet=quiet))
+    r = clean(drain(s, quiet=quiet))
+    # Detect kicked/disconnected
+    if KICK_SIGN in r:
+        raise OSError("Character kicked by another connection")
+    return r
 
 
 def m(s, cmd, q=1.0, log_path=None):
