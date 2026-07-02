@@ -44,21 +44,32 @@ def self_check(s, nav):
             rid, _, short, _ = nav.look_and_identify()
             print(f"  [POS] now at {short} ({rid})")
         elif not any(rid.startswith(d + '/') or rid.startswith(d) for d in _ACCESSIBLE_DIRS):
-            # Wrong region (e.g. 取经路, 月宫) — quit+relog to get back to kezhan
-            print(f"  [POS] inaccessible region {rid} — quit+relog to return home")
-            try:
-                m(s, "quit", q=3.0)
-            except Exception:
-                pass
-            from net import disconnect, connect
-            disconnect(s)
-            import time; time.sleep(3)
-            s2 = connect()
-            nav.s = s2
-            nav.current_rid = None
-            rid, _, short, _ = nav.look_and_identify()
-            print(f"  [POS] after relog: {short} ({rid})")
-            return self_check(s2, nav)  # re-run check with fresh connection
+            # Wrong region (e.g. 取经路, 月宫) — try recall first, then quit
+            print(f"  [POS] inaccessible region {rid} — trying recall")
+            escaped = False
+            for escape_cmd in ("recall", "go out", "go south", "go east", "go west", "go north"):
+                m(s, escape_cmd, q=2.0)
+                rid2, _, short2, _ = nav.look_and_identify()
+                if rid2 and any(rid2.startswith(d) for d in _ACCESSIBLE_DIRS):
+                    print(f"  [POS] escaped to {short2} ({rid2}) via {escape_cmd}")
+                    rid = rid2
+                    escaped = True
+                    break
+            if not escaped:
+                print(f"  [POS] couldn't escape — quit+relog to return home")
+                try:
+                    m(s, "quit", q=3.0)
+                except Exception:
+                    pass
+                from net import disconnect, connect
+                disconnect(s)
+                import time; time.sleep(3)
+                s2 = connect()
+                nav.s = s2
+                nav.current_rid = None
+                rid, _, short, _ = nav.look_and_identify()
+                print(f"  [POS] after relog: {short} ({rid})")
+                return self_check(s2, nav)  # re-run check with fresh connection
     else:
         print("  [POS] can't identify — will localize by walking")
         nav.force_localize(M_obj=None)
@@ -75,7 +86,7 @@ def self_check(s, nav):
 
     # 3. Inventory
     inv = m(s, "i", q=1.5, log_path=LOG_PATH)
-    has_weapon = any(w in inv for w in ("刀", "剑", "枪", "叉", "棍", "斧", "锤", "杖"))
+    has_weapon = any(w in inv for w in ("刀", "剑", "枪", "叉", "棍", "棒", "斧", "锤", "杖"))
     has_armor = any(w in inv for w in ("甲", "盾", "袍", "衣", "护"))
     print(f"  [INV] weapon in inventory: {has_weapon}, armor in inventory: {has_armor}")
 
@@ -239,9 +250,19 @@ def main():
                 print("  [LOOP] can't identify position — localizing")
                 nav._localize_and_retry(None)
             elif not any(rid_check.startswith(d) for d in ACCESSIBLE_DIRS):
-                print(f"  [LOOP] inaccessible region {rid_check} — quit+relog")
-                s = recover_to_kezhan(s, nav)
-                nav.s = s
+                print(f"  [LOOP] inaccessible region {rid_check} — trying recall first")
+                # Try recall/go commands before quitting (might just be 1 room off)
+                for escape_cmd in ("recall", "go out", "go south", "go east", "go west", "go north"):
+                    m(s, escape_cmd, q=2.0)
+                    rid2, _, sh2, _ = nav.look_and_identify()
+                    if rid2 and any(rid2.startswith(d) for d in ACCESSIBLE_DIRS):
+                        print(f"  [LOOP] escaped to {sh2} ({rid2}) via {escape_cmd}")
+                        nav.current_rid = rid2
+                        break
+                else:
+                    print(f"  [LOOP] couldn't escape — quit+relog")
+                    s = recover_to_kezhan(s, nav)
+                    nav.s = s
         except OSError:
             print("  [LOOP] socket dead — reconnecting")
             s = recover_to_kezhan(s, nav)
@@ -342,7 +363,7 @@ def main():
         if cur_dmg == 0:
             print("  [PRE-MISSION] no weapon — checking inventory")
             inv = m(s, "i", q=1.0)
-            if any(w in inv for w in ("刀", "剑", "枪", "叉", "棍", "斧", "锤", "杖", "匕")):
+            if any(w in inv for w in ("刀", "剑", "枪", "叉", "棍", "棒", "斧", "锤", "杖", "匕")):
                 print("  [PRE-MISSION] weapon in bag — wielding")
                 m(s, "wield all", q=1.0)
             else:

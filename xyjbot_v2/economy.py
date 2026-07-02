@@ -26,7 +26,7 @@ def gear_up(s, nav):
     sc = m(s, "score", q=2.5, log_path=LOG_PATH)
     dmg = _parse_stat(sc, r"兵器伤害力：\[\s*(\d+)")
     arm = _parse_stat(sc, r"盔甲保护力：\[\s*(\d+)")
-    has_weapon_in_bag = any(w in inv for w in ("刀", "剑", "枪", "叉", "棍", "斧", "锤", "杖", "匕"))
+    has_weapon_in_bag = any(w in inv for w in ("刀", "剑", "枪", "叉", "棍", "棒", "斧", "锤", "杖", "匕"))
     has_armor_in_bag = any(w in inv for w in ("甲", "盾", "袍", "衣", "护"))
     print(f"  [GEAR] dmg={dmg} armor={arm} | weapon_in_bag={has_weapon_in_bag} armor_in_bag={has_armor_in_bag}")
 
