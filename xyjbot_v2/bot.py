@@ -13,11 +13,107 @@ from map_engine import XYJMap
 from nav import Navigator
 from net import connect, disconnect, m, drain, clean, parse_short, parse_exits, is_dead, send
 from economy import gear_up, eat_drink, restock, wait_full_hp, bank_deposit, already_geared
+from net import connect, disconnect, m, drain, clean, parse_short, parse_exits, is_dead, send, parse_hp
 from mission import ask_yuan, resolve_target, sweep_vicinity, load_mission, save_mission
 from mission import mission_age, mission_expired, MISSION_TTL
 from combat import fight
 
 os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
+
+
+def self_check(s, nav):
+    """Full self-awareness check at startup. Assesses:
+    - Position (where am I?)
+    - HP/Sen (am I hurt?)
+    - Food/Water (can I regen?)
+    - Inventory (what am I carrying?)
+    - Gear (weapon equipped? armor?)
+    - Money (how much silver/gold?)
+    Then takes corrective action before entering the main loop.
+    """
+    print("\n[SELF-CHECK] === Assessing condition ===")
+
+    # 1. Position
+    rid, desc, short, exits = nav.look_and_identify()
+    if rid:
+        print(f"  [POS] {short} ({rid})")
+        if rid.startswith(OURHOME_PREFIX):
+            print("  [POS] stuck in ourhome — escaping")
+            escape_ourhome(s, nav)
+            rid, _, short, _ = nav.look_and_identify()
+            print(f"  [POS] now at {short} ({rid})")
+    else:
+        print("  [POS] can't identify — will localize by walking")
+        nav.force_localize(M_obj=None)
+
+    # 2. HP / Sen / Food / Water
+    hr = m(s, "hp", q=1.5, log_path=LOG_PATH)
+    hp = parse_hp(hr)
+    qixue = hp.get("气血", (0, 0))
+    jingshen = hp.get("精神", (0, 0))
+    food = hp.get("食物", (0, 0))
+    water = hp.get("饮水", (0, 0))
+    print(f"  [HP] 气血 {qixue[0]}/{qixue[1]}  精神 {jingshen[0]}/{jingshen[1]}")
+    print(f"  [HP] 食物 {food[0]}/{food[1]}  饮水 {water[0]}/{water[1]}")
+
+    # 3. Inventory
+    inv = m(s, "i", q=1.5, log_path=LOG_PATH)
+    has_weapon = any(w in inv for w in ("刀", "剑", "枪", "叉", "棍", "斧", "锤", "杖"))
+    has_armor = any(w in inv for w in ("甲", "盾", "袍", "衣", "护"))
+    print(f"  [INV] weapon in inventory: {has_weapon}, armor in inventory: {has_armor}")
+
+    # 4. Gear (equipped stats)
+    sc = m(s, "score", q=2.5, log_path=LOG_PATH)
+    import re
+    dmg = int((re.search(r"兵器伤害力：\[\s*(\d+)", sc) or [0,0])[1]) if re.search(r"兵器伤害力：\[\s*(\d+)", sc) else 0
+    arm = int((re.search(r"盔甲保护力：\[\s*(\d+)", sc) or [0,0])[1]) if re.search(r"盔甲保护力：\[\s*(\d+)", sc) else 0
+    print(f"  [GEAR] dmg={dmg} armor={arm}")
+
+    # 5. Money
+    from economy import _money_from_score
+    money = _money_from_score(sc)
+    print(f"  [GOLD] {money:.1f}两 on hand")
+
+    # ── Corrective actions ───────────────────────────────────────────
+
+    # Wield weapon if in inventory but not equipped
+    if dmg == 0 and has_weapon:
+        print("  [FIX] weapon in inventory but not wielded — wielding")
+        m(s, "wield all", q=1.0)
+        sc = m(s, "score", q=2.0)
+        dmg = int((re.search(r"兵器伤害力：\[\s*(\d+)", sc) or [0,0])[1]) if re.search(r"兵器伤害力：\[\s*(\d+)", sc) else 0
+        print(f"  [FIX] dmg after wield: {dmg}")
+
+    # Wear armor if in inventory but not equipped
+    if arm < 10 and has_armor:
+        print("  [FIX] armor in inventory but not worn — wearing")
+        m(s, "wear all", q=1.0)
+        sc = m(s, "score", q=2.0)
+        arm = int((re.search(r"盔甲保护力：\[\s*(\d+)", sc) or [0,0])[1]) if re.search(r"盔甲保护力：\[\s*(\d+)", sc) else 0
+        print(f"  [FIX] armor after wear: {arm}")
+
+    # Food/water low? Restock before anything else
+    if food[0] < 100 or water[0] < 100:
+        print("  [FIX] food/water low — restocking")
+        restock(s, nav)
+        hr = m(s, "hp", q=1.5)
+        hp = parse_hp(hr)
+        food = hp.get("食物", (0, 0))
+        water = hp.get("饮水", (0, 0))
+        print(f"  [FIX] food {food[0]}/{food[1]}  water {water[0]}/{water[1]}")
+
+    # HP/Sen low? Rest until full
+    if qixue[0] < qixue[1] * 0.8 or jingshen[0] < jingshen[1] * 0.8:
+        print("  [FIX] HP/Sen below 80% — resting to full")
+        wait_full_hp(s)
+
+    # No weapon at all? Gear up from shop
+    if dmg == 0:
+        print("  [FIX] no weapon — gearing up from shop")
+        gear_up(s, nav)
+
+    print("[SELF-CHECK] === Ready ===\n")
+    return dmg, arm
 
 
 def tally_get():
@@ -102,25 +198,8 @@ def main():
     nav = Navigator(s, M)
     print("[CONNECTED]")
 
-    # ── INIT: localize ─────────────────────────────────────────────────
-    rid, desc, short, exits = nav.look_and_identify()
-    if rid:
-        print(f"[LOC] at {short} ({rid})")
-        if rid.startswith(OURHOME_PREFIX):
-            escape_ourhome(s, nav)
-    else:
-        print("[LOC] couldn't identify — continuing anyway")
-        # Try to localize by walking
-        nav.force_localize(M)
-
-    # ── GEARING ────────────────────────────────────────────────────────
-    if not already_geared(s):
-        print("[GEARING] no weapon — gearing up")
-        gear_up(s, nav)
-    else:
-        print("[GEARING] already equipped")
-        if eat_drink(s):
-            restock(s, nav)
+    # ── INIT: full self-awareness check ───────────────────────────────
+    dmg, arm = self_check(s, nav)
 
     # ── MAIN LOOP ─────────────────────────────────────────────────────
     kills = 0
