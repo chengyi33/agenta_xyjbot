@@ -299,6 +299,19 @@ def main():
             _dm2 = re.search(r"兵器伤害力：\[\s*(\d+)", sc2)
             cur_dmg = int(_dm2.group(1)) if _dm2 else 0
 
+        # ── Determine if gear is expendable ────────────────────────────
+        # If weapon dmg <= 25 (钢刀, 5两) and armor <= 16 (牛皮盾, 10两),
+        # then quit+relog is cheap — total replacement cost ~15两.
+        # If gear is better than shop-baseline, NEVER quit (irreplaceable).
+        gear_expendable = (cur_dmg <= 25 and True)  # will re-check armor below
+        if cur_dmg > 25:
+            gear_expendable = False
+        sc3 = m(s, "score", q=2.0)
+        _am = re.search(r"盔甲保护力：\[\s*(\d+)", sc3)
+        cur_arm = int(_am.group(1)) if _am else 0
+        if cur_arm > 16:
+            gear_expendable = False
+
         # Check gear/money for dangerous areas
         if any(sd in DANGEROUS_DIRS for sd in search_dirs) and (cur_dmg == 0 or cur_money < 10):
             print(f"  [SKIP] dangerous area, not prepared — waiting")
@@ -346,6 +359,27 @@ def main():
             print("  !! WE DIED — recovering")
             s = recover_to_kezhan(s, nav)
             nav.s = s
+
+        elif result == "stuck":
+            # Navigation got stuck — decide whether to quit+relog based on gear
+            if gear_expendable:
+                print("  [STUCK] gear is basic (replaceable for ~15两) — quit+relog to kezhan")
+                s = recover_to_kezhan(s, nav)
+                nav.s = s
+            else:
+                print(f"  [STUCK] gear is GOOD (dmg={cur_dmg} arm={cur_arm}) — NOT quitting, giving up mission")
+                # Try walking to hub manually from wherever we are
+                rid, _, _, _ = nav.look_and_identify()
+                if rid:
+                    hub_path = M.path(rid, LANDMARKS["hub"])
+                    if hub_path is not None:
+                        print(f"  [STUCK] walking to hub ({len(hub_path)} steps)")
+                        nav.goto(LANDMARKS["hub"], max_steps=100)
+                # Give up this mission, wait for timer
+                remain = MISSION_TTL - mission_age(t_start)
+                nap = max(30, min(remain + 5, 600))
+                print(f"  [STUCK] waiting {nap}s for mission to expire")
+                time.sleep(nap)
 
         elif result == "not_found":
             nf_count = nf_count + 1 if name == nf_name else 1

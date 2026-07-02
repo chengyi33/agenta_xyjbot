@@ -167,6 +167,9 @@ def sweep_vicinity(s, nav, M, anchor_id, search_dirs, name, ids, radius=3):
     r = nav.goto(anchor_id, area_dirs=search_dirs, max_steps=MAX_STEPS_PER_NAV)
     if r == "dead":
         return "dead"
+    if r == "stuck":
+        print(f"  [sweep] got stuck navigating to anchor")
+        return "stuck"
     if not r:
         print(f"  [sweep] couldn't reach anchor")
         return "not_found"

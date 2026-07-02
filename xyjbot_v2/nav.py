@@ -59,6 +59,8 @@ class Navigator:
         """Navigate to goal_id using dead reckoning.
 
         Returns: True if arrived, False if stuck, "dead" if died.
+        Includes stuck detection: if >60s elapsed and <50% path done, returns "stuck".
+        Caller decides whether to quit+relog based on gear value.
         """
         # If we don't know where we are, identify first
         if self.current_rid is None:
@@ -66,6 +68,11 @@ class Navigator:
             if rid is None:
                 print("  [nav] can't identify starting position")
                 return self._localize_and_retry(goal_id, area_dirs)
+
+        start_rid = self.current_rid
+        start_time = time.time()
+        total_path_len = None
+        fail_count = 0  # consecutive stuck detections
 
         for attempt in range(max_steps):
             if self.current_rid == goal_id:
@@ -78,6 +85,34 @@ class Navigator:
                 return False
             if not path:
                 return True
+
+            # Track total path length for progress estimation
+            if total_path_len is None:
+                total_path_len = len(path)
+
+            # ── Stuck detection ─────────────────────────────────────
+            elapsed = time.time() - start_time
+            remaining = len(path)
+            progress = 1 - (remaining / max(total_path_len, 1))
+            if elapsed > 60 and progress < 0.5:
+                print(f"  [nav] STUCK: {elapsed:.0f}s elapsed, {progress*100:.0f}% done")
+                # Try 1: re-look, re-identify, re-BFS
+                rid, desc, short, exits = self.look_and_identify(area_dirs=area_dirs)
+                if rid is not None:
+                    self.current_rid = rid
+                    new_path = self.M.path(rid, goal_id)
+                    if new_path is not None and len(new_path) < remaining:
+                        print(f"  [nav] re-identified, new path: {len(new_path)} steps")
+                        continue
+                fail_count += 1
+                if fail_count >= 2:
+                    return "stuck"
+                # Try wandering in a new direction
+                if exits:
+                    avoid = REVERSE.get(self.last_dir)
+                    d = next((e for e in exits if e != avoid), next(iter(exits)))
+                    self.step(d)
+                continue
 
             # ── Dead reckoning: move without looking ──────────────────
             d, expected_next = path[0]
