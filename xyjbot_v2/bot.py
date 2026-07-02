@@ -257,15 +257,49 @@ def main():
             time.sleep(nap)
             continue
 
-        # Check gear/money for dangerous areas
-        sc = m(s, "score", q=2.0)
+        # ── Pre-mission self-check ─────────────────────────────────────
+        # Quick condition check: verify gear, HP, food/water before each mission
+        quick_sc = m(s, "score", q=2.0)
         import re
-        _dm = re.search(r"兵器伤害力：\[\s*(\d+)", sc)
+        _dm = re.search(r"兵器伤害力：\[\s*(\d+)", quick_sc)
         cur_dmg = int(_dm.group(1)) if _dm else 0
         from economy import _money_from_score
-        cur_money = _money_from_score(sc)
+        cur_money = _money_from_score(quick_sc)
 
-        DANGEROUS_DIRS = ["d/westway"]
+        # Check HP + food/water
+        quick_hp = parse_hp(m(s, "hp", q=1.0))
+        qixue = quick_hp.get("气血", (1, 1))
+        food = quick_hp.get("食物", (0, 0))
+        water = quick_hp.get("饮水", (0, 0))
+
+        # No weapon? Check inventory + gear up
+        if cur_dmg == 0:
+            print("  [PRE-MISSION] no weapon — checking inventory")
+            inv = m(s, "i", q=1.0)
+            if any(w in inv for w in ("刀", "剑", "枪", "叉", "棍", "斧", "锤", "杖", "匕")):
+                print("  [PRE-MISSION] weapon in bag — wielding")
+                m(s, "wield all", q=1.0)
+            else:
+                print("  [PRE-MISSION] no weapon anywhere — gearing up")
+                gear_up(s, nav)
+
+        # Food/water low? Restock
+        if food[0] < 100 or water[0] < 100:
+            print("  [PRE-MISSION] food/water low — restocking")
+            restock(s, nav)
+
+        # HP low? Rest
+        if qixue[0] < qixue[1] * 0.8:
+            print("  [PRE-MISSION] HP below 80% — resting")
+            wait_full_hp(s)
+
+        # Re-read dmg after corrective actions
+        if cur_dmg == 0:
+            sc2 = m(s, "score", q=2.0)
+            _dm2 = re.search(r"兵器伤害力：\[\s*(\d+)", sc2)
+            cur_dmg = int(_dm2.group(1)) if _dm2 else 0
+
+        # Check gear/money for dangerous areas
         if any(sd in DANGEROUS_DIRS for sd in search_dirs) and (cur_dmg == 0 or cur_money < 10):
             print(f"  [SKIP] dangerous area, not prepared — waiting")
             time.sleep(30)

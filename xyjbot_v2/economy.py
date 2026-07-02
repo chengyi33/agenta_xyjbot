@@ -12,31 +12,62 @@ from nav import Navigator
 
 
 def gear_up(s, nav):
-    """Ensure we have weapon + shield. Buy from shop if needed."""
-    # Check current gear
+    """Ensure we have weapon + shield. Self-aware: check i + score first.
+
+    Logic:
+    1. Check `i` (inventory) + `score` (equipped stats)
+    2. If weapon in inventory but dmg=0 → wield it (was dropped on disconnect)
+    3. If armor in inventory but armor<10 → wear it
+    4. If no weapon in inventory → check yuan's floor → then buy from shop
+    5. Re-check after each action
+    """
+    # ── Self-aware gear check ─────────────────────────────────────────
+    inv = m(s, "i", q=1.5, log_path=LOG_PATH)
     sc = m(s, "score", q=2.5, log_path=LOG_PATH)
     dmg = _parse_stat(sc, r"兵器伤害力：\[\s*(\d+)")
     arm = _parse_stat(sc, r"盔甲保护力：\[\s*(\d+)")
-    print(f"  gear: dmg={dmg} armor={arm}")
+    has_weapon_in_bag = any(w in inv for w in ("刀", "剑", "枪", "叉", "棍", "斧", "锤", "杖", "匕"))
+    has_armor_in_bag = any(w in inv for w in ("甲", "盾", "袍", "衣", "护"))
+    print(f"  [GEAR] dmg={dmg} armor={arm} | weapon_in_bag={has_weapon_in_bag} armor_in_bag={has_armor_in_bag}")
 
-    # Check yuan's location for dropped gear
+    # Wield weapon from inventory if not equipped
+    if dmg == 0 and has_weapon_in_bag:
+        print("  [GEAR] weapon in bag but not wielded — wielding")
+        m(s, "wield all", q=1.0)
+        sc = m(s, "score", q=2.0)
+        dmg = _parse_stat(sc, r"兵器伤害力：\[\s*(\d+)")
+        print(f"  [GEAR] dmg after wield: {dmg}")
+
+    # Wear armor from inventory if not equipped
+    if arm < 10 and has_armor_in_bag:
+        print("  [GEAR] armor in bag but not worn — wearing")
+        m(s, "wear all", q=1.0)
+        sc = m(s, "score", q=2.0)
+        arm = _parse_stat(sc, r"盔甲保护力：\[\s*(\d+)")
+        print(f"  [GEAR] armor after wear: {arm}")
+
+    if dmg > 0 and arm >= 10:
+        print("  [GEAR] fully equipped — no shopping needed")
+        return dmg, arm
+
+    # ── Check yuan's floor for dropped gear ───────────────────────────
     nav.goto(LANDMARKS["yuan"])
     r = m(s, "look", q=1.5, log_path=LOG_PATH)
     if any(w in r for w in ("甲", "盔", "盾", "刀", "剑", "枪", "叉", "袍", "衣", "护")):
         print("  [GEAR] items at yuan — picking up")
         m(s, "get all", q=1.5)
+        # Remove inferior gear before equipping better
         m(s, "unwield all", q=1.0)
         m(s, "remove all", q=1.0)
-        m(s, "drop coarse", q=1.0)
+        m(s, "drop coarse", q=1.0)   # drop starting linen shirt
         m(s, "wield all", q=1.0)
         m(s, "wear all", q=1.0)
         sc = m(s, "score", q=2.5)
         dmg = _parse_stat(sc, r"兵器伤害力：\[\s*(\d+)")
         arm = _parse_stat(sc, r"盔甲保护力：\[\s*(\d+)")
-        print(f"  gear after pickup: dmg={dmg} armor={arm}")
+        print(f"  [GEAR] after pickup: dmg={dmg} armor={arm}")
 
     if dmg > 0 and arm >= 10:
-        print("  [GEAR] already equipped — skipping shop")
         return dmg, arm
 
     # Need to buy
