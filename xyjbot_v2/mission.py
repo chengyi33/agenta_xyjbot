@@ -143,9 +143,26 @@ def ask_yuan(s, nav):
     if mm:
         want = mm.group(1)
         sn, sids, sreg, slm, st = load_mission()
-        if sn == want:
+        if sn == want and sreg:
+            # Saved mission found with region info — continue it
             return sn, sids, sreg, slm, st, cleared
-        return want, [], None, None, 0, cleared
+        # No saved mission or missing region — try asking Yuan about the specific monster
+        r2 = m(s, f"ask yuan about {want}", q=3.0, log_path=LOG_PATH)
+        name2, ids2, region2, landmark2 = parse_mission(r2)
+        if name2 and region2:
+            t_start = int(time.time())
+            save_mission(name2, ids2, region2, landmark2, t_start)
+            return name2, ids2, region2, landmark2, t_start, cleared
+        # Still no region — try asking about kill one more time
+        r3 = m(s, "ask yuan about kill", q=3.0, log_path=LOG_PATH)
+        name3, ids3, region3, landmark3 = parse_mission(r3)
+        if name3 and region3:
+            t_start = int(time.time())
+            save_mission(name3, ids3, region3, landmark3, t_start)
+            return name3, ids3, region3, landmark3, t_start, cleared
+        # Give up — return with what we have, bot will wait for timer
+        print(f"  [YUAN] can't get region for {want} — waiting for mission to expire")
+        return want, [], None, None, int(time.time()), cleared
 
     return None, [], None, None, 0, cleared
 
