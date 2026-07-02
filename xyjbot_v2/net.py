@@ -63,6 +63,9 @@ def m(s, cmd, q=1.0, log_path=None):
 
 
 # ── Room Parsing ──────────────────────────────────────────────────────
+# Short names that should be treated as garbage (confusion responses)
+_GARBAGE_SHORTS = {"什么", "什么？", "嗯？", "哦", "嗯", "啊", "哦？", "啊？"}
+
 def parse_short(desc):
     """Extract room short name from the first non-empty, non-prompt line."""
     for line in desc.split("\n")[:6]:
@@ -70,6 +73,12 @@ def parse_short(desc):
         if line and not line.startswith(">"):
             # Room header: "南海之滨 - description" or "南海之滨－"
             line = re.split(r"\s*[-－]\s*", line)[0].strip()
+            # Sanity check: reject known garbage responses
+            if line in _GARBAGE_SHORTS:
+                continue
+            # Reject single-char or question-only lines
+            if len(line) <= 1 or line in ("？", "！", "。"):
+                continue
             return line
     return ""
 

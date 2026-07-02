@@ -117,8 +117,8 @@ class Navigator:
             # BFS from current position
             path = self.M.path(self.current_rid, goal_id)
             if path is None:
-                print(f"  [nav] no path from {self.current_rid} to {goal_id}")
-                return False
+                print(f"  [nav] no path from {self.current_rid} to {goal_id} — trying localize")
+                return self._localize_and_retry(goal_id, area_dirs)
             if not path:
                 return True
 
@@ -190,13 +190,28 @@ class Navigator:
                         self._update_region(rid)
                         self.last_dir = d
                         continue
-                    # Can't identify — might be a NEW room not in the map
-                    print(f"  [nav] mismatch: expected '{expected_short}', got '{actual_short}'")
-                    print(f"  [nav] unknown room — discovering! exits={actual_exits}")
-                    new_rid = self._generate_room_id(actual_short)
+                    # Can't identify from step response — do explicit look to confirm
+                    print(f"  [nav] mismatch: expected '{expected_short}', got '{actual_short}' — looking")
+                    rid2, desc2, short2, exits2 = self.look_and_identify(
+                        hint_id=expected_next, area_dirs=area_dirs)
+                    if rid2:
+                        # look found a known room — use it
+                        if self.current_rid and rid2 != expected_next:
+                            print(f"  [nav] edge fix (look confirmed): {d}→{rid2}")
+                            self.M.mark_edge_broken(self.current_rid, expected_next, d)
+                            self.M.add_discovered_edge(self.current_rid, rid2, d)
+                        self.current_rid = rid2
+                        self._update_region(rid2)
+                        self.last_dir = d
+                        continue
+                    # look also unknown — NOW create a discovered room (exits from look)
+                    actual_look_short = short2 or actual_short
+                    actual_look_exits = exits2 if exits2 else actual_exits
+                    print(f"  [nav] unknown room — discovering! short='{actual_look_short}' exits={list(actual_look_exits)}")
+                    new_rid = self._generate_room_id(actual_look_short)
                     # Convert exits set → dict for map storage
-                    exits_dict = {d: "" for d in actual_exits}
-                    self.M.add_discovered_room(new_rid, actual_short, exits_dict,
+                    exits_dict = {ex: "" for ex in actual_look_exits}
+                    self.M.add_discovered_room(new_rid, actual_look_short, exits_dict,
                                                from_rid=self.current_rid, direction=d)
                     if self.current_rid:
                         self.M.mark_edge_broken(self.current_rid, expected_next, d)
@@ -250,11 +265,19 @@ class Navigator:
             rid, desc, short, exits = self.look_and_identify(area_dirs=area_dirs)
             if rid is not None:
                 print(f"  [nav] localized at {short} ({rid})")
-                return self.goto(goal_id, area_dirs, max_steps=200)
-            if not exits:
+                if goal_id:
+                    return self.goto(goal_id, area_dirs, max_steps=200)
+                return True
+            # Even if exits is empty, try basic directions to escape phantom room
+            dirs_to_try = [d for d in localize_pref if d in exits] if exits else localize_pref[:6]
+            for d in dirs_to_try:
+                r, moved = self.step(d)
+                if moved:
+                    self.last_dir = d
+                    break
+            else:
+                # Nothing moved — truly stuck
                 break
-            d = next((p for p in localize_pref if p in exits), next(iter(exits)))
-            self.step(d)
         print("  [nav] could not localize")
         return False
 
