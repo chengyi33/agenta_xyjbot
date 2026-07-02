@@ -169,6 +169,7 @@ def ask_yuan(s, nav):
 
 # ── Sweep ─────────────────────────────────────────────────────────────
 MAX_FULL_SWEEP = 45  # rooms — small areas get full sweep
+MAX_GLOBAL_SWEEP_ROOMS = 600  # cap on global sweep (fallback when no region)
 
 
 def sweep_vicinity(s, nav, M, anchor_id, search_dirs, name, ids, radius=3):
@@ -252,4 +253,47 @@ def sweep_vicinity(s, nav, M, anchor_id, search_dirs, name, ids, radius=3):
         print(f"  fought {name} but lost track — Yuan will confirm")
         return "engaged_lost"
     print(f"  {name} not found — mission likely expired")
+    return "not_found"
+
+
+def global_sweep(s, nav, M, name, ids):
+    """Fallback when Yuan gives no region: sweep all accessible dirs for monster.
+    Used when reminder form has no region and we can't wait 30 min."""
+    from economy import smart_eat_drink, wait_full_hp
+    from combat import fight
+
+    print(f"  [GLOBAL SWEEP] searching all accessible dirs for {name}")
+    smart_eat_drink(s, nav)
+    wait_full_hp(s)
+
+    hub = LANDMARKS["hub"]
+    order = M.bfs_order(hub, search_dirs=list(ACCESSIBLE_DIRS), radius=999)
+    order = order[:MAX_GLOBAL_SWEEP_ROOMS]
+    print(f"  [GLOBAL SWEEP] {len(order)} rooms to check")
+
+    engaged = False
+    for room_id in order:
+        r = nav.goto(room_id, area_dirs=list(ACCESSIBLE_DIRS), max_steps=MAX_STEPS_PER_NAV)
+        if r == "dead":
+            return "dead"
+        if r == "stuck":
+            return "stuck"
+        if not r:
+            continue
+        desc = m(s, "look", q=1.2, log_path=LOG_PATH)
+        if has_monster(desc, name):
+            print(f"  ** {name} FOUND in {M.short_of(room_id)} (global sweep) **")
+            engaged = True
+            result = fight(s, name, ids)
+            if result is True:
+                return True
+            if result == "dead":
+                return "dead"
+            if result == "mission_lost":
+                return "mission_lost"
+            break
+
+    if engaged:
+        return "engaged_lost"
+    print(f"  [GLOBAL SWEEP] {name} not found in accessible dirs")
     return "not_found"

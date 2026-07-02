@@ -14,7 +14,7 @@ from nav import Navigator
 from net import connect, disconnect, m, drain, clean, parse_short, parse_exits, is_dead, send
 from economy import gear_up, eat_drink, smart_eat_drink, wait_full_hp, bank_deposit, already_geared
 from net import connect, disconnect, m, drain, clean, parse_short, parse_exits, is_dead, send, parse_hp
-from mission import ask_yuan, resolve_target, sweep_vicinity, load_mission, save_mission
+from mission import ask_yuan, resolve_target, sweep_vicinity, global_sweep, load_mission, save_mission
 from mission import mission_age, mission_expired, MISSION_TTL
 from combat import fight
 
@@ -244,6 +244,32 @@ def main():
         # ── Resolve target ─────────────────────────────────────────────
         anchor, search_dirs = resolve_target(M, region, landmark)
         if anchor is None or not search_dirs:
+            if region is None and name:
+                # Reminder form — no region data. Try global sweep instead of waiting.
+                print(f"  no region for {name} — launching global sweep")
+                result = global_sweep(s, nav, M, name, ids)
+                if result is True:
+                    kills += 1
+                    total = tally_add(1)
+                    pending_guai = None
+                    session_stuck_count = 0
+                    print(f"\n  *** KILL #{kills} (global sweep): {name} | LIFETIME: {total} ***")
+                    time.sleep(2)
+                    m(s, "get all", q=1.5)
+                    bank_deposit(s, nav)
+                elif result == "dead":
+                    s = recover_to_kezhan(s, nav)
+                    nav.s = s
+                elif result == "mission_lost":
+                    smart_eat_drink(s, nav)
+                    wait_full_hp(s)
+                elif result == "stuck":
+                    session_stuck_count += 1
+                    # Don't know gear_expendable here; be conservative
+                    print("  [GLOBAL SWEEP] stuck — skipping quit+relog, waiting 30s")
+                    time.sleep(30)
+                # After global sweep (found or not), re-ask Yuan next iteration
+                continue
             remain = MISSION_TTL - mission_age(t_start)
             nap = max(30, min(remain + 5, 600))
             print(f"  unreachable region; waiting {nap}s")
