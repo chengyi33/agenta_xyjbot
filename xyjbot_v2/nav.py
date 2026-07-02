@@ -218,9 +218,19 @@ class Navigator:
                         self._update_region(rid2)
                         self.last_dir = d
                         continue
-                    # look also unknown — NOW create a discovered room (exits from look)
+                    # look also unknown — only create discovered room if we have useful info
                     actual_look_short = short2 or actual_short
                     actual_look_exits = exits2 if exits2 else actual_exits
+                    if not actual_look_short and not actual_look_exits:
+                        # No useful info from step or look — skip discovery, re-look next iteration
+                        print(f"  [nav] mismatch with no room info — skipping discovery, re-looking")
+                        if self.current_rid:
+                            self.M.mark_edge_broken(self.current_rid, expected_next, d)
+                        # Don't update current_rid — stay where we think we are
+                        self.stuck_count += 1
+                        if self.stuck_count >= 3:
+                            return False
+                        continue
                     print(f"  [nav] unknown room — discovering! short='{actual_look_short}' exits={list(actual_look_exits)}")
                     new_rid = self._generate_room_id(actual_look_short)
                     # Convert exits set → dict for map storage

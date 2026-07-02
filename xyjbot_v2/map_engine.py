@@ -312,6 +312,10 @@ class XYJMap:
         """
         import datetime as _dt
         now = _dt.datetime.now().isoformat()
+        # Reject self-loops (bot confused about position)
+        if from_rid == to_rid:
+            print(f"  [MAP] self-loop rejected: {from_rid} --{direction}--> {to_rid}")
+            return
         key = (from_rid, to_rid)
         rev_key = (to_rid, from_rid)
 
