@@ -236,6 +236,7 @@ def main():
     pending_guai = _lm_name
     session_stuck_count = 0      # consecutive stuck events this session
     SESSION_STUCK_LIMIT = 5      # rollback map if stuck this many times
+    failed_missions = set()      # (name, region, landmark) keys we've confirmed unreachable this TTL
 
     for attempt in range(120):
         if kills >= TARGET_KILLS:
@@ -297,6 +298,7 @@ def main():
         # Check expiry
         if mission_expired(t_start):
             print(f"  mission expired — re-asking")
+            failed_missions.discard((name, region, landmark))  # cleared on expiry
             time.sleep(2)
             continue
 
@@ -336,11 +338,20 @@ def main():
             continue
 
         # Check reachability from hub
+        mission_key = (name, region, landmark)
+        if mission_key in failed_missions:
+            remain = MISSION_TTL - mission_age(t_start)
+            nap = max(60, min(remain + 5, 300))
+            print(f"  [SKIP] {name} already confirmed unreachable — waiting {nap}s for TTL")
+            time.sleep(nap)
+            continue
+
         test_path = M.path(LANDMARKS["hub"], anchor)
         if test_path is None:
             remain = MISSION_TTL - mission_age(t_start)
-            nap = max(30, min(remain + 5, 600))
+            nap = max(60, min(remain + 5, 300))
             print(f"  {search_dirs} unreachable from hub; waiting {nap}s")
+            failed_missions.add(mission_key)
             time.sleep(nap)
             continue
 
@@ -417,7 +428,7 @@ def main():
 
         # ── SEARCHING + FIGHTING ──────────────────────────────────────
         t0 = time.time()
-        result = sweep_vicinity(s, nav, M, anchor, search_dirs, name, ids)
+        result = sweep_vicinity(s, nav, M, anchor, search_dirs, name, ids, t_start=t_start)
         elapsed = time.time() - t0
 
         # ── Handle result ──────────────────────────────────────────────
@@ -449,9 +460,11 @@ def main():
             nav.s = s
 
         elif result == "stuck":
-            # Navigation got stuck — decide whether to quit+relog based on gear
+            # Navigation got stuck — mark mission as failed so we don't retry it
+            # immediately (the d/sea tight-loop bug)
+            failed_missions.add(mission_key)
             session_stuck_count += 1
-            print(f"  [STUCK] session stuck count: {session_stuck_count}/{SESSION_STUCK_LIMIT}")
+            print(f"  [STUCK] {name} marked failed; session stuck count: {session_stuck_count}/{SESSION_STUCK_LIMIT}")
 
             # Too many stucks this session? Map overrides might be poisoned — rollback
             if session_stuck_count >= SESSION_STUCK_LIMIT:

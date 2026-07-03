@@ -143,7 +143,8 @@ SPAWN_DIRS = (
 # Dirs reachable on foot (plus d/sea via dive for 龙宫 members)
 ACCESSIBLE_DIRS = (
     "d/city", "d/westway", "d/kaifeng", "d/lingtai", "d/gao", "d/eastway",
-    "d/sea", "d/nanhai",
+    # "d/sea",   # requires 避水咒 to dive — add back after obtaining it
+    "d/nanhai",
 )
 
 # ── Special edges (verb-based transitions) ────────────────────────────

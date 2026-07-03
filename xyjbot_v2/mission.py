@@ -175,15 +175,27 @@ MAX_FULL_SWEEP = 45  # rooms — small areas get full sweep
 MAX_GLOBAL_SWEEP_ROOMS = 600  # cap on global sweep (fallback when no region)
 
 
-def sweep_vicinity(s, nav, M, anchor_id, search_dirs, name, ids, radius=3):
-    """Go to anchor, search for monster, fight if found."""
+def sweep_vicinity(s, nav, M, anchor_id, search_dirs, name, ids, radius=3, t_start=None):
+    """Go to anchor, search for monster, fight if found.
+
+    radius is the base hop radius for large-area sweeps.
+    t_start (mission issue time) scales the radius: monsters wander ~1 room/min,
+    so we expand the search window proportionally to mission age.
+    """
     from economy import smart_eat_drink, wait_full_hp
     from combat import fight
 
     smart_eat_drink(s, nav)
     wait_full_hp(s)
 
-    t_start = time.time()
+    # Scale radius with mission age: monster walks ~1 room/min.
+    # Base radius 3, add 1 hop per 45s elapsed, cap at 20.
+    if t_start is not None:
+        age_s = max(0, int(time.time()) - t_start)
+        radius = min(3 + age_s // 45, 20)
+        print(f"  [sweep] mission age {age_s}s → search radius {radius}")
+
+    sweep_start = time.time()
     print(f"  -> landmark {M.short_of(anchor_id)} ({anchor_id})")
     r = nav.goto(anchor_id, area_dirs=search_dirs, max_steps=MAX_STEPS_PER_NAV)
     if r == "dead":
@@ -206,7 +218,7 @@ def sweep_vicinity(s, nav, M, anchor_id, search_dirs, name, ids, radius=3):
 
     engaged = False
     for room_id in order:
-        if time.time() - t_start > STUCK_SECS:
+        if time.time() - sweep_start > STUCK_SECS:
             print(f"  [TIMEOUT] sweep exceeded {STUCK_SECS}s")
             return "engaged_lost" if engaged else "not_found"
 
