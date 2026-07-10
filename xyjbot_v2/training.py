@@ -50,7 +50,7 @@ SKILLS_TO_LEARN = [
 SPIRIT_SLEEP_RATIO = 0.20       # sleep at <20% spirit (buffer for navigation)
 TRAIN_FOOD_MIN = 120
 TRAIN_WATER_MIN = 120
-STOP_QN = 100                   # stop when 潜能 below this
+STOP_QN = 500                   # stop when 潜能 below this (user: keep ~500, then hang out)
 
 
 def _parse_skills(output):
@@ -196,6 +196,52 @@ def _restock_and_return(s, nav):
     # Verify we're back
     if not _has_master(m(s, "look", q=0.3)):
         print(f"  [TRAIN] ⚠️ not at 王方平 after restock — re-navigating")
+        _navigate_to_wangfangping(s, nav)
+
+
+def _regrab_jingubang(s, nav):
+    """Jingubang was lost (dropped on death). Grab a fresh one from
+    长安 当铺 (d/city/dangpu, shared spawn) and return to 王方平."""
+    print(f"  [TRAIN] 🔄 jingubang missing — re-grabbing from 长安 当铺")
+
+    # Exit 地府 if we're inside
+    rid, _, _, _ = nav.look_and_identify()
+    if rid and rid.startswith("d/death/"):
+        print(f"  [TRAIN] exiting 地府 first...")
+        for d in EXIT_DIFU_PATH:
+            m(s, d, q=1.0); time.sleep(0.3)
+        m(s, "open guancai", q=2.0); time.sleep(0.5)
+        for d in EXIT_GUANCAI_PATH:
+            m(s, d, q=1.0); time.sleep(0.3)
+        nav.current_rid = None
+        nav.look_and_identify()
+
+    # Go to 长安 当铺
+    try:
+        nav.goto("d/city/dangpu", max_steps=400)
+    except Exception as e:
+        print(f"  [TRAIN] ⚠️ nav to 当铺 failed ({e}) — recall")
+        m(s, "recall", q=2.0); time.sleep(1)
+        nav.current_rid = None; nav.look_and_identify()
+        nav.goto("d/city/dangpu", max_steps=400)
+
+    rid, short, _, _ = nav.look_and_identify()
+    print(f"  [TRAIN] at 当铺: {short} ({rid})")
+    for name in ("jingubang", "金箍棒"):
+        r = m(s, f"get {name}", q=2.0)
+        print(f"  [TRAIN] get {name}: {r[:100]}")
+        if "没有" not in r and "什么" not in r and "附近" not in r:
+            break
+        time.sleep(0.3)
+
+    # Wield as primary
+    m(s, "unwield blade", q=1.0)
+    m(s, "wield jingubang", q=1.5)
+
+    # Return to 王方平
+    print(f"  [TRAIN] returning to 王方平...")
+    _navigate_to_wangfangping(s, nav)
+    if not _has_master(m(s, "look", q=0.3)):
         _navigate_to_wangfangping(s, nav)
 
 
@@ -418,12 +464,19 @@ def train_at_difu(s, nav):
 
         # Periodic re-assert: keep 金箍棒 (250 dmg) as primary weapon.
         # Death/PvP at 地府 can silently revert to default 钢刀 (25 dmg)
-        # without disconnecting, so re-wield every few cycles.
+        # without disconnecting. If it's missing entirely, re-grab it.
         if cycle % 5 == 0:
             inv_jg = m(s, "i", q=0.8)
             if "金箍棒" in inv_jg or "jingubang" in inv_jg.lower():
                 m(s, "unwield blade", q=0.5)
                 m(s, "wield jingubang", q=1.0)
+            else:
+                print(f"  [TRAIN] ⚠️ jingubang not in inventory — re-grabbing")
+                _regrab_jingubang(s, nav)
+                # After re-grab we're back at 王方平; re-sync loop vars
+                hp = parse_hp(m(s, "hp", q=0.5))
+                jingshen = hp.get("精神", (0, 1))
+                continue
 
         if qn < STOP_QN:
             print(f"\n[TRAIN] ✅ 潜能={qn} < {STOP_QN} — training complete!")
