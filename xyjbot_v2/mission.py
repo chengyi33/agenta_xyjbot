@@ -8,7 +8,7 @@ import re, time, sys, os
 from collections import deque
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import (LANDMARKS, MISSION_TTL, STUCK_SECS, SPAWN_DIRS, ACCESSIBLE_DIRS,
-                    LOG_PATH, MISSION_FILE, MAX_STEPS_PER_NAV)
+                    LOG_PATH, MISSION_FILE, MAX_STEPS_PER_NAV, REGION_ALIASES)
 from net import m, drain, clean, has_monster
 from map_engine import _in_dirs
 
@@ -34,6 +34,9 @@ def parse_mission(text):
 def resolve_target(M, region, landmark):
     """Resolve mission to (anchor_id, search_dirs).
     Returns (None, []) if unreachable."""
+    # Apply region aliases (e.g. 灵台方寸 → 方寸山, 东海龙宫 → 龙宫)
+    if region and region in REGION_ALIASES:
+        region = REGION_ALIASES[region]
     dirs = M.area_dirs_for_region(region) if region else []
     anchor = None
 
@@ -69,10 +72,17 @@ def resolve_target(M, region, landmark):
 
     if anchor is None:
         pool = [r for d in dirs for r in M.rooms_under(d) if M.exits_of(r)]
-        anchor = pool[0] if pool else None
+        # Prefer rooms reachable from hub; fall back to first in pool
+        hub = LANDMARKS["hub"]
+        reachable_pool = [r for r in pool if M.path(hub, r) is not None]
+        anchor = reachable_pool[0] if reachable_pool else (pool[0] if pool else None)
 
     if anchor is not None and not _is_accessible(anchor):
-        return None, []
+        # Not in ACCESSIBLE_DIRS whitelist — fall back to path-from-hub check.
+        # Some regions (e.g. 崎岖小路 in d/moon) are reachable via westway but
+        # not listed in ACCESSIBLE_DIRS. Allow if hub→anchor path exists.
+        if M.path(LANDMARKS["hub"], anchor) is None:
+            return None, []
 
     return anchor, dirs
 
@@ -153,14 +163,26 @@ def ask_yuan(s, nav):
         r2 = m(s, f"ask yuan about {want}", q=3.0, log_path=LOG_PATH)
         name2, ids2, region2, landmark2 = parse_mission(r2)
         if name2 and region2:
-            t_start = int(time.time())
+            # Preserve the OLDER t_start if Yuan is re-describing the same monster
+            # in a new location — don't reset the clock (prevents indefinite waits
+            # for unreachable missions whose clock keeps resetting to "now").
+            if sn == name2 and st:
+                t_start = st  # keep original issue time
+                print(f"  [YUAN] reminder re-parsed with region; keeping original t_start (age {int(time.time())-st}s)")
+            else:
+                t_start = int(time.time())
             save_mission(name2, ids2, region2, landmark2, t_start)
             return name2, ids2, region2, landmark2, t_start, cleared
         # Still no region — try asking about kill one more time
         r3 = m(s, "ask yuan about kill", q=3.0, log_path=LOG_PATH)
         name3, ids3, region3, landmark3 = parse_mission(r3)
         if name3 and region3:
-            t_start = int(time.time())
+            # Same clock-preservation logic
+            if sn == name3 and st:
+                t_start = st
+                print(f"  [YUAN] kill re-parsed same monster; keeping original t_start (age {int(time.time())-st}s)")
+            else:
+                t_start = int(time.time())
             save_mission(name3, ids3, region3, landmark3, t_start)
             return name3, ids3, region3, landmark3, t_start, cleared
         # Give up — return with what we have, bot will wait for timer
@@ -215,6 +237,21 @@ def sweep_vicinity(s, nav, M, anchor_id, search_dirs, name, ids, radius=3, t_sta
     else:
         order = M.bfs_order(anchor_id, search_dirs=search_dirs, radius=radius)
         print(f"  large area ({len(full)} rooms) — vicinity: {len(order)} within {radius}h")
+
+    # Pre-filter: skip rooms that are dead-ends (no path back to anchor).
+    # This prevents the bot from entering locked sub-areas (e.g. monastery corridors)
+    # that have one-way or locked doors and will trap the bot.
+    safe_order = []
+    for room_id in order:
+        if room_id == anchor_id:
+            safe_order.append(room_id)
+            continue
+        # Room must have a path back to anchor to be safe to visit
+        if M.path(room_id, anchor_id) is not None:
+            safe_order.append(room_id)
+    if len(safe_order) < len(order):
+        print(f"  [sweep] skipped {len(order)-len(safe_order)} dead-end rooms")
+    order = safe_order
 
     engaged = False
     for room_id in order:
@@ -283,8 +320,12 @@ def global_sweep(s, nav, M, name, ids):
 
     hub = LANDMARKS["hub"]
     order = M.bfs_order(hub, search_dirs=list(ACCESSIBLE_DIRS), radius=999)
+    # Hard-filter: bfs_order may return rooms reachable via live-learned edges
+    # that cross into unreachable regions (e.g. d/moon via a ghost edge).
+    # Strictly keep only rooms whose prefix matches an ACCESSIBLE dir.
+    order = [r for r in order if any(r.startswith(d + "/") or r == d for d in ACCESSIBLE_DIRS)]
     order = order[:MAX_GLOBAL_SWEEP_ROOMS]
-    print(f"  [GLOBAL SWEEP] {len(order)} rooms to check")
+    print(f"  [GLOBAL SWEEP] {len(order)} rooms to check (strict accessible filter)")
 
     engaged = False
     for room_id in order:

@@ -127,12 +127,17 @@ def parse_exits(desc):
 
 
 def parse_hp(hr):
-    """Parse `hp` output. Returns dict with (cur, max) for 气血/精神/食物/饮水."""
+    """Parse `hp` output. Returns dict with (cur, max) for 气血/精神/食物/饮水,
+    and plain int for 潜能/武学/杀气."""
     out = {}
     for label in ("气血", "精神", "食物", "饮水"):
         mm = re.search(rf"{label}：\s*(\d+)\s*/\s*(\d+)", hr)
         if mm:
             out[label] = (int(mm.group(1)), int(mm.group(2)))
+    for label in ("潜能", "武学", "杀气"):
+        mm = re.search(rf"{label}：\s*(\d+)", hr)
+        if mm:
+            out[label] = int(mm.group(1))
     return out
 
 
@@ -159,7 +164,7 @@ def connect():
     r = send(s, PASS, quiet=4.0)
     if "y/n" in r:
         m(s, "y", q=4.0)
-    m(s, "set wimpy 10")
+    m(s, "set wimpy 20")
     return s
 
 

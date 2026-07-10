@@ -70,17 +70,21 @@ class Navigator:
         if "马盗" in r:
             self._handle_madao(r)
         # Handle locked doors / gates — try to open and re-step
-        if not moved and any(w in r for w in ("打开", "石门", "门", "开门", "关着")):
-            print(f"  [nav] door detected — trying to open")
-            open_cmds = ["open shimen", "open men", "open door", "open gate",
-                         "open shibi", "push men", "knock men"]
-            for cmd in open_cmds:
-                ro = m(self.s, cmd, q=1.0)
-                if any(w in ro for w in ("打开了", "开了", "推开", "轰")):
-                    print(f"  [nav] opened with: {cmd}")
-                    r = m(self.s, direction, q=STEP_TIMEOUT)
-                    moved = not any(w in r for w in MOVE_FAIL)
-                    break
+        # NOTE: door messages may NOT appear in MOVE_FAIL, so check independently
+        from config import DOOR_CLOSED_MSGS
+        door_blocked = any(w in r for w in DOOR_CLOSED_MSGS)
+        if not moved or door_blocked:
+            if door_blocked or any(w in r for w in ("石门", "门", "开门", "关着")):
+                print(f"  [nav] door detected — trying to open")
+                open_cmds = ["open shimen", "open men", "open door", "open gate",
+                             "open shibi", "push men", "knock men", "push door"]
+                for cmd in open_cmds:
+                    ro = m(self.s, cmd, q=1.0)
+                    if any(w in ro for w in ("打开了", "开了", "推开", "轰", "吱呀", "咿呀")):
+                        print(f"  [nav] opened with: {cmd}")
+                        r = m(self.s, direction, q=STEP_TIMEOUT)
+                        moved = not any(w in r for w in MOVE_FAIL)
+                        break
         return r, moved
 
     def _handle_madao(self, desc):

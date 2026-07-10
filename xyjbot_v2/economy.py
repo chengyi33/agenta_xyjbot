@@ -71,11 +71,38 @@ def gear_up(s, nav):
         return dmg, arm
 
     # Need to buy
-    _bank_withdraw(s, nav, need=20)
-
-    # Buy from 兵器铺
-    nav.goto(LANDMARKS["shop"])
-    print("  --- 兵器铺 stock ---")
+    # ── Check bank for money (score doesn't show money on this server) ──
+    print("  [GEAR] unarmed + broke — trying bank")
+    nav.goto(LANDMARKS["bank"])
+    bal_r = m(s, "account", q=2.0)
+    bal = _parse_account(bal_r)
+    print(f"  [BANK] account balance: {bal}两")
+    if bal > 0:
+        to_withdraw = min(bal, 15)  # enough for blade+shield
+        m(s, f"withdraw {to_withdraw} silver", q=2.0)
+        # Verify we got the money by trying to buy
+        nav.goto(LANDMARKS["shop"])
+        print("  [SHOP] trying to buy basic gear...")
+        r = m(s, "buy blade from xiao xiao", q=1.5)
+        if "你从萧萧" in r or "买了" in r:
+            print("  [GEAR] bought blade (5两)")
+        r = m(s, "buy shield from xiao xiao", q=1.5)
+        if "你从萧萧" in r or "买了" in r:
+            print("  [GEAR] bought shield (10两)")
+        m(s, "wield all", q=1.0)
+        m(s, "wear all", q=1.0)
+        sc = m(s, "score", q=2.0)
+        dmg = _parse_stat(sc, r"兵器伤害力：\[\s*(\d+)")
+        arm = _parse_stat(sc, r"盔甲保护力：\[\s*(\d+)")
+        print(f"  gear final: dmg={dmg} armor={arm}")
+        return dmg, arm
+    else:
+        print("  [GEAR] truly broke — 0 in bank, proceeding unarmed")
+        sc = m(s, "score", q=2.5)
+        dmg = _parse_stat(sc, r"兵器伤害力：\[\s*(\d+)")
+        arm = _parse_stat(sc, r"盔甲保护力：\[\s*(\d+)")
+        print(f"  gear final: dmg={dmg} armor={arm}")
+        return dmg, arm
     stock = m(s, "list", q=1.5)
     for ln in stock.split("\n"):
         if ln.strip():
@@ -199,6 +226,26 @@ def smart_eat_drink(s, nav):
 
     # Need to go to kezhan
     print(f"  [FOOD] still low (food={food_cur} water={water_cur}) — heading to kezhan")
+    # ── Check gold: withdraw from bank if needed ──
+    # NOTE: score doesn't show money on this server — use inventory (i) instead
+    inv_check = m(s, "i", q=1.5)
+    gold_on_hand = _money_from_score(inv_check)
+    if gold_on_hand < 1:
+        # Try bank withdraw before giving up
+        print("  [FOOD] 0 gold on hand — checking bank")
+        nav.goto(LANDMARKS["bank"])
+        bal_r = m(s, "account", q=2.0)
+        bal = _parse_account(bal_r)
+        if bal > 0:
+            to_withdraw = min(bal, 15)
+            m(s, f"withdraw {to_withdraw} silver", q=2.0)
+            print(f"  [FOOD] withdrew {to_withdraw}两 from bank (had {bal}两)")
+            inv_check = m(s, "i", q=1.5)
+            gold_on_hand = _money_from_score(inv_check)
+    if gold_on_hand < 1:
+        print(f"  [FOOD] 0 gold — skipping shop, proceeding broke (will earn gold from kills)")
+        return
+    # ── END PATCH ──
     nav.goto(LANDMARKS["kezhan"])
 
     # Re-check inventory after arriving
@@ -218,13 +265,15 @@ def smart_eat_drink(s, nav):
     # Also re-fills a freshly bought bag (which contains alcohol, not water)
     m(s, "fill jiudai", q=1.0)
 
-    # Buy food if still needed
-    if needs_f:
+    # Buy food if still needed AND we don't already have it
+    if needs_f and not has_food_in_inv(inv):
         print("  [FOOD] buying gou rou")
         for _ in range(8):
             r = m(s, "buy gourou from xiao er", q=0.6)
             if any(w in r for w in ("钱不够", "没有卖", "什么")):
                 break
+    elif needs_f and has_food_in_inv(inv):
+        print("  [FOOD] already have food in inventory — skipping buy")
 
     # Eat/drink to full
     eat_drink(s)
@@ -233,7 +282,10 @@ def smart_eat_drink(s, nav):
 
 
 def wait_full_hp(s, tries=40):
-    """Rest until 气血 AND 精神 are full."""
+    """Rest until 气血 AND 精神 are full.
+    Format: kee/eff_kee (eff_kee%of-max) - current HP vs effective HP.
+    Full when kee >= eff_kee (current HP restored to effective max).
+    """
     for _ in range(tries):
         hr = m(s, "hp", q=1.0)
         hp = parse_hp(hr)
@@ -247,11 +299,12 @@ def wait_full_hp(s, tries=40):
     return False
 
 
-def bank_deposit(s, nav):
+def bank_deposit(s, nav, keep=None):
     """Deposit excess money. Convert gold to silver first.
 
     Bank path from hub: west → north → west → south (d/city/bank)
     """
+    threshold = keep if keep is not None else KEEP_ON_HAND
     nav.goto(LANDMARKS["bank"])
     # Deposit all gold coins into account first
     m(s, "deposit gold", q=2.0)
@@ -262,25 +315,25 @@ def bank_deposit(s, nav):
         gold_amt = int(has_gold.group(1))
         print(f"  [BANK] converting {gold_amt} gold → {gold_amt * 100} silver")
         m(s, f"convert {gold_amt} gold to silver", q=2.0)
-    # Check silver on hand
-    sc = m(s, "score", q=2.0)
-    on_hand = _money_from_score(sc)
-    if on_hand <= KEEP_ON_HAND:
-        # Withdraw enough to keep 50两 on hand
-        if on_hand < KEEP_ON_HAND:
-            need = int(KEEP_ON_HAND - on_hand)
+    # Check silver on hand (use i not score — score doesn't show money on this server)
+    inv = m(s, "i", q=2.0)
+    on_hand = _money_from_score(inv)
+    if on_hand <= threshold:
+        # Withdraw enough to keep threshold on hand
+        if on_hand < threshold:
+            need = int(threshold - on_hand)
             m(s, f"withdraw {need} silver", q=2.0)
             print(f"  [BANK] withdrew {need}两 for expenses")
         return
-    to_deposit = int(on_hand - KEEP_ON_HAND)
+    to_deposit = int(on_hand - threshold)
     m(s, f"deposit {to_deposit} silver", q=2.0)
-    print(f"  [BANK] deposited {to_deposit}两 (kept {KEEP_ON_HAND} on hand)")
+    print(f"  [BANK] deposited {to_deposit}两 (kept {threshold} on hand)")
 
 
 def _bank_withdraw(s, nav, need=20):
     """Withdraw from bank if needed. Convert gold to silver first."""
-    sc = m(s, "score", q=2.0)
-    on_hand = _money_from_score(sc)
+    inv = m(s, "i", q=2.0)  # score doesn't show money on this server
+    on_hand = _money_from_score(inv)
     if on_hand >= need:
         return on_hand
     nav.goto(LANDMARKS["bank"])
@@ -293,18 +346,62 @@ def _bank_withdraw(s, nav, need=20):
         gold_amt = int(has_gold.group(1))
         print(f"  [BANK] converting {gold_amt} gold → silver")
         m(s, f"convert {gold_amt} gold to silver", q=2.0)
-    sc = m(s, "score", q=2.0)
-    on_hand = _money_from_score(sc)
+    inv = m(s, "i", q=2.0)
+    on_hand = _money_from_score(inv)
     if on_hand >= need:
         return on_hand
     to_withdraw = need - int(on_hand)
     m(s, f"withdraw {to_withdraw} silver", q=2.0)
     print(f"  [BANK] withdrew {to_withdraw}两")
-    return _money_from_score(m(s, "score", q=2.0))
+    return _money_from_score(m(s, "i", q=2.0))
+
+
+def _parse_chinese_number(s):
+    """Parse Chinese number string: 八十→80, 八十八→88, 一百二十三→123."""
+    cn_digits = {'零':0,'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9}
+    cn_units = {'十':10,'百':100,'千':1000,'万':10000}
+    result = 0
+    current = 0
+    for ch in s:
+        if ch in cn_digits:
+            current = cn_digits[ch]
+        elif ch in cn_units:
+            unit = cn_units[ch]
+            if current == 0:
+                current = 1  # bare unit like 十=10
+            result += current * unit
+            current = 0
+        else:
+            return 0  # unknown char
+    result += current
+    return result
 
 
 def _money_from_score(sc):
-    """Parse total silver from score."""
+    """Parse total silver from score OR inventory output.
+    Now parses BOTH gold (100两 each) and silver from inventory format."""
+    total = 0
+
+    # Try inventory format: "九两黄金(Gold)" + "四十一两银子(Silver)"
+    mm_gold = re.search(r"(\S+?)两黄金", sc)
+    mm_silver = re.search(r"(\S+?)两银子", sc)
+
+    if mm_gold or mm_silver:
+        if mm_gold:
+            num_str = mm_gold.group(1)
+            try:
+                total += int(num_str) * 100
+            except ValueError:
+                total += _parse_chinese_number(num_str) * 100
+        if mm_silver:
+            num_str = mm_silver.group(1)
+            try:
+                total += int(num_str)
+            except ValueError:
+                total += _parse_chinese_number(num_str)
+        return total
+
+    # Fallback: score/bank format with Arabic numerals
     mm = re.search(r"(\d+)\s*两", sc)
     liang = int(mm.group(1)) if mm else 0
     mm2 = re.search(r"(\d+)\s*钱", sc)
@@ -319,8 +416,96 @@ def _parse_stat(sc, pattern):
     return int(mm.group(1)) if mm else 0
 
 
+def _parse_account(response):
+    """Parse bank account balance including gold and silver.
+    Format: '您在敝银庄共存有九两黄金六两白银'. Gold = 100 silver each.
+    Also handles Arabic numerals: '5两黄金20两白银'."""
+    total = 0
+    # Pattern: <number>两<currency> where currency is 黄金 or 白银/银子
+    # Use finditer to catch all occurrences
+    for m in re.finditer(r'([\d一二三四五六七八九十百千万]+)\s*两\s*(黄金|白银|银子)?', response):
+        num_str = m.group(1)
+        currency = m.group(2) or ''
+        # Parse the number
+        try:
+            val = int(num_str)
+        except ValueError:
+            val = _parse_chinese_number(num_str)
+        if not val:
+            continue
+        # Multiply gold by 100
+        if currency == '黄金':
+            total += val * 100
+        else:
+            total += val
+    # Fallback: old format with just "存有X两" (no currency labels at all)
+    if total == 0:
+        cn = {"一":1,"二":2,"三":3,"四":4,"五":5,"六":6,"七":7,"八":8,"九":9,"十":10}
+        mm = re.search(r"存有(.+?)两", response)
+        if mm:
+            word = mm.group(1)
+            try:
+                return int(word)
+            except ValueError:
+                if word in cn:
+                    return cn[word]
+                val = cn.get(word[-1], 0)
+                if "十" in word:
+                    val += 10
+                return val
+    return total
+
+
 def already_geared(s):
     """Check if weapon is equipped."""
     sc = m(s, "score", q=2.0)
     dmg = _parse_stat(sc, r"兵器伤害力：\[\s*(\d+)")
     return dmg > 0
+
+
+def has_bishui_zhou(s):
+    """Check if we have 避水咒 (bishui zhou) talisman in inventory."""
+    inv = m(s, "i", q=1.5, log_path=LOG_PATH)
+    return "避水咒" in inv or "bishui" in inv.lower()
+
+
+def get_bishui_zhou(s, nav):
+    """Acquire 避水咒 by trading jiudai to 袁守诚 at 袁氏草堂.
+
+    Process: kezhan → buy jiudai (if needed) → caotang → give jiudai to yuan
+    袁守诚 is at d/city/yuancao (caotang landmark).
+    Returns True if we now have bishui zhou.
+    """
+    if has_bishui_zhou(s):
+        print("  [BISHUI] already have 避水咒")
+        return True
+
+    print("  [BISHUI] getting 避水咒 from 袁守诚...")
+
+    # ── PATCH: skip if broke — can't buy jiudai ──
+    inv_b = m(s, "i", q=1.5)  # score doesn't show money on this server
+    if _money_from_score(inv_b) < 1:
+        print("  [BISHUI] 0 gold — skipping 避水咒 for now")
+        return False
+    # ── END PATCH ──
+
+    # Ensure we have jiudai
+    inv = m(s, "i", q=1.5)
+    if not has_jiudai_in_inv(inv):
+        print("  [BISHUI] buying jiudai at kezhan first")
+        nav.goto(LANDMARKS["kezhan"])
+        m(s, "buy jiudai from xiao er", q=1.5)
+
+    # Go to 袁守诚 at 袁氏草堂 (caotang)
+    nav.goto(LANDMARKS["caotang"])
+
+    # Give jiudai to 袁守诚 to receive 避水咒
+    r = m(s, "give jiudai to yuan", q=3.0)
+    print(f"  [BISHUI] give response: {r[:120] if r else '(none)'}")
+
+    if has_bishui_zhou(s):
+        print("  [BISHUI] ✅ 避水咒 obtained!")
+        return True
+    else:
+        print("  [BISHUI] ❌ failed to get 避水咒")
+        return False

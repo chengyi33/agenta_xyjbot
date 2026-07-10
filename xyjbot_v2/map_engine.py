@@ -156,18 +156,28 @@ class XYJMap:
         # Remove broken edges from adjacency (only non-expired or permanent)
         import datetime as _dt
         now = _dt.datetime.now().timestamp()
+        expired_keys = []
         for key, info in self._broken_edges.items():
             u, t = key
             failures = info.get("failures", 1)
             permanent = info.get("permanent", False)
             first_failed = info.get("first_failed", now)
             age = now - first_failed
-            # Temporary breaks expire after 24h, unless permanent or 3+ failures
-            if permanent or failures >= 3 or age < 86400:
+            # Permanent: always blocked
+            if permanent:
                 self.adj.get(u, {}).pop(t, None)
-            else:
-                # Expired — remove from broken, allow retry
-                del self._broken_edges[key]
+            # Temp with 2+ failures: block for 1h, then auto-recover
+            elif failures >= 2 and age < 3600:
+                self.adj.get(u, {}).pop(t, None)
+            # Temp with 2+ failures older than 1h: auto-recover
+            elif failures >= 2 and age >= 3600:
+                expired_keys.append(key)
+            # 1 failure: tracked but never blocks adjacency
+            # Auto-expire single-failure entries after 24h
+            elif failures == 1 and age >= 86400:
+                expired_keys.append(key)
+        for key in expired_keys:
+            del self._broken_edges[key]
 
     def _load_overrides(self):
         """Load map overrides from JSON file."""
@@ -228,22 +238,26 @@ class XYJMap:
         return True
 
     def mark_edge_broken(self, from_rid, to_rid, direction=None):
-        """Mark an edge as broken/conditional.
-        Temporary (24h) on first failure, permanent after 3 failures.
+        """Mark an edge as broken.
+        - 1st failure: recorded but edge STAYS in adjacency (retry later)
+        - 2nd failure: edge removed from adjacency (temp, auto-recover after 1h)
+        - 3rd failure: permanent (manual fix required)
         """
         import datetime as _dt
         key = (from_rid, to_rid)
         existing = self._broken_edges.get(key, {})
         failures = existing.get("failures", 0) + 1
+        now = _dt.datetime.now().timestamp()
         self._broken_edges[key] = {
             "direction": direction,
             "failures": failures,
-            "first_failed": existing.get("first_failed", _dt.datetime.now().timestamp()),
-            "last_failed": _dt.datetime.now().timestamp(),
+            "first_failed": existing.get("first_failed", now),
+            "last_failed": now,
             "permanent": failures >= 3,
         }
-        # Remove from adjacency immediately
-        self.adj.get(from_rid, {}).pop(to_rid, None)
+        # Only remove from adjacency after 2+ failures
+        if failures >= 2:
+            self.adj.get(from_rid, {}).pop(to_rid, None)
         status = "PERMANENT" if failures >= 3 else f"temp (failure #{failures})"
         print(f"  [MAP] edge broken [{status}]: {from_rid} → {to_rid} ({direction})")
         self._save_overrides()
@@ -476,13 +490,16 @@ class XYJMap:
 
         # Strategy 1: adjacency from previous room + direction
         if prev_id and came_dir:
-            # Direct exit from prev_id
+            # Direct exit from prev_id — if short is empty, trust adjacency blindly
             target = self.exits_of(prev_id).get(came_dir)
-            if target and self.short_of(target) == short:
-                return target
-            # Inferred neighbor
+            if target:
+                t_short = self.short_of(target)
+                if t_short == short or not short:
+                    # Empty short = MUD didn't echo name; trust the map edge
+                    return target
+            # Inferred neighbor (discovered edges etc.)
             for nb, dd in self.adj.get(prev_id, {}).items():
-                if dd == came_dir and self.short_of(nb) == short:
+                if dd == came_dir and (self.short_of(nb) == short or not short):
                     return nb
 
         # Strategy 2: confidence cache

@@ -1,8 +1,229 @@
 {
-  "broken_edges": {},
+  "broken_edges": {
+    "d/changan/nanchengkou|d/eastway/jinshi": {
+      "direction": "southeast",
+      "failures": 3,
+      "first_failed": 1783403399.249112,
+      "last_failed": 1783403399.249126,
+      "permanent": true
+    },
+    "d/changan/nanchengkou|d/changan/wside1": {
+      "direction": "west",
+      "failures": 3,
+      "first_failed": 1783406918.821642,
+      "last_failed": 1783406918.821656,
+      "permanent": true
+    },
+    "d/gao/lu1|d/changan/wroad3": {
+      "direction": "east",
+      "failures": 3,
+      "first_failed": 1783453325.382371,
+      "last_failed": 1783466036.083275,
+      "permanent": true
+    },
+    "d/gao/lu1|d/gao/zhyuan": {
+      "direction": "north",
+      "failures": 14,
+      "first_failed": 1783510301.137337,
+      "last_failed": 1783510364.396836,
+      "permanent": true
+    },
+    "d/gao/lu1|d/gao/lu2": {
+      "direction": "west",
+      "failures": 3,
+      "first_failed": 1783510301.885619,
+      "last_failed": 1783525236.961522,
+      "permanent": true
+    },
+    "d/eastway/dyt1|d/eastway/ciensi": {
+      "direction": "west",
+      "failures": 1,
+      "first_failed": 1783570167.725914,
+      "last_failed": 1783570167.725914,
+      "permanent": false
+    },
+    "d/westway/yinma|d/westway/madao": {
+      "direction": "northwest",
+      "failures": 1,
+      "first_failed": 1783570786.771648,
+      "last_failed": 1783570786.771648,
+      "permanent": false
+    },
+    "d/moon/yunu1|d/moon/yunu2": {
+      "direction": "westup",
+      "failures": 1,
+      "first_failed": 1783576185.872491,
+      "last_failed": 1783576185.872491,
+      "permanent": false
+    },
+    "d/moon/yunu2|d/moon/yunu3": {
+      "direction": "southup",
+      "failures": 1,
+      "first_failed": 1783576197.253753,
+      "last_failed": 1783576197.253753,
+      "permanent": false
+    },
+    "d/moon/yunu3|d/moon/yunu4": {
+      "direction": "southup",
+      "failures": 1,
+      "first_failed": 1783576208.654514,
+      "last_failed": 1783576208.654514,
+      "permanent": false
+    },
+    "d/city/baihu-w2|d/city/baihu-w1": {
+      "direction": "east",
+      "failures": 1,
+      "first_failed": 1783579899.446111,
+      "last_failed": 1783579899.446111,
+      "permanent": false
+    },
+    "d/city/baihu-w3|d/city/beiyin1": {
+      "direction": "south",
+      "failures": 1,
+      "first_failed": 1783579953.185133,
+      "last_failed": 1783579953.185133,
+      "permanent": false
+    },
+    "d/city/zhuque-s2|d/city/zhuque-s3": {
+      "direction": "south",
+      "failures": 1,
+      "first_failed": 1783587792.241237,
+      "last_failed": 1783587792.241237,
+      "permanent": false
+    },
+    "d/city/bingqipu|d/city/qinglong-e1": {
+      "direction": "north",
+      "failures": 1,
+      "first_failed": 1783628010.097438,
+      "last_failed": 1783628010.097438,
+      "permanent": false
+    },
+    "d/gao/lu1|d/gao/road4": {
+      "direction": "west",
+      "failures": 2,
+      "first_failed": 1783652812.788397,
+      "last_failed": 1783652814.308923,
+      "permanent": false
+    },
+    "d/gao/lu1|d/gao/road1": {
+      "direction": "east",
+      "failures": 2,
+      "first_failed": 1783652815.807599,
+      "last_failed": 1783652817.307949,
+      "permanent": false
+    },
+    "d/city/baihu-w1|d/city/baihu-w2": {
+      "direction": "east",
+      "failures": 2,
+      "first_failed": 1783653748.058657,
+      "last_failed": 1783653749.559034,
+      "permanent": false
+    }
+  },
   "discovered_rooms": {},
-  "discovered_edges": {},
-  "pending_rooms": {},
-  "pending_edges": {},
-  "saved_at": "2026-07-02T01:20:00"
+  "discovered_edges": {
+    "d/gao/lu1|d/gao/road1": {
+      "direction": "east",
+      "confidence": 3,
+      "first_seen": "2026-07-07T12:42:05.384176",
+      "last_confirmed": "2026-07-07T16:04:12.965220"
+    },
+    "d/gao/lu1|d/changan/wroad3": {
+      "direction": "east",
+      "confidence": 10,
+      "first_seen": "2026-07-07T16:06:43.985772",
+      "last_confirmed": "2026-07-07T16:06:45.484660"
+    },
+    "d/gao/lu1|d/gao/road4": {
+      "direction": "west",
+      "confidence": 3,
+      "first_seen": "2026-07-08T04:31:41.886180",
+      "last_confirmed": "2026-07-08T04:31:46.388488"
+    },
+    "d/gao/lu1|d/gao/lu2": {
+      "direction": "west",
+      "confidence": 6,
+      "first_seen": "2026-07-08T08:38:02.463835",
+      "last_confirmed": "2026-07-08T08:40:25.802585"
+    },
+    "d/gao/road1|d/gao/lu1": {
+      "direction": "west",
+      "confidence": 2,
+      "first_seen": "2026-07-07T12:41:26.183185",
+      "last_confirmed": "2026-07-08T08:40:36.212254"
+    },
+    "d/city/baihu-w1|d/city/baihu-w2": {
+      "direction": "east",
+      "confidence": 2,
+      "first_seen": "2026-07-08T23:51:38.697371",
+      "last_confirmed": "2026-07-08T23:52:31.691093"
+    },
+    "d/city/baihu-w1|d/city/center": {
+      "direction": "east",
+      "confidence": 8,
+      "first_seen": "2026-07-09T00:43:02.550982",
+      "last_confirmed": "2026-07-09T00:43:23.505225"
+    }
+  },
+  "pending_rooms": {
+    "d/city/discovered_瓦砾场_63135": {
+      "short": "瓦砾场",
+      "exits": {
+        "up": ""
+      },
+      "from_rid": "d/city/center",
+      "direction": "down",
+      "first_seen": "2026-07-07T15:25:35.106914",
+      "confirmations": 1
+    },
+    "d/city/discovered_瓦砾场_40225": {
+      "short": "瓦砾场",
+      "exits": {
+        "up": ""
+      },
+      "from_rid": "d/city/center",
+      "direction": "down",
+      "first_seen": "2026-07-08T12:50:25.714951",
+      "confirmations": 1
+    }
+  },
+  "pending_edges": {
+    "d/nanhai/zoulang|d/nanhai/gate": {
+      "direction": "south",
+      "first_seen": "2026-07-07T12:11:13.572083"
+    },
+    "d/gao/zhyuan|d/gao/houyuan": {
+      "direction": "north",
+      "first_seen": "2026-07-07T12:40:12.891513"
+    },
+    "d/city/bookstore|d/city/zhuque-s2": {
+      "direction": "south",
+      "first_seen": "2026-07-07T15:24:59.867760"
+    },
+    "d/city/zhuque-s2|d/city/center": {
+      "direction": "north",
+      "first_seen": "2026-07-07T15:25:00.619059"
+    },
+    "d/gao/pianting|d/gao/fanting": {
+      "direction": "east",
+      "first_seen": "2026-07-08T08:39:15.763180"
+    },
+    "d/city/baihu-w2|d/city/center": {
+      "direction": "east",
+      "first_seen": "2026-07-08T23:51:39.448708"
+    },
+    "d/city/baihu-w3|d/city/huashengsi": {
+      "direction": "south",
+      "first_seen": "2026-07-08T23:52:33.187806"
+    },
+    "d/city/zhuque-s2|d/changan/nanchengkou": {
+      "direction": "south",
+      "first_seen": "2026-07-09T02:03:12.246898"
+    },
+    "d/city/bingqipu|d/city/misc/kantai": {
+      "direction": "north",
+      "first_seen": "2026-07-09T13:13:30.105388"
+    }
+  },
+  "saved_at": "2026-07-09T20:22:29.559703"
 }

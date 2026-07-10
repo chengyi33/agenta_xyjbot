@@ -14,7 +14,8 @@ USER, PASS = "honua", "198633"
 BOT_DIR = os.path.dirname(os.path.abspath(__file__))
 WORLD_DIR = os.path.join(BOT_DIR, "..", "world")
 MAP_PATH = os.path.join(BOT_DIR, "xyj2000_map.json")
-FINDMAP_PATH = os.path.realpath(os.path.join(BOT_DIR, "world", "adm", "daemons", "find.map"))
+# Use WORLD_DIR (not realpath) — the symlink target may be on a different machine
+FINDMAP_PATH = os.path.join(WORLD_DIR, "adm", "daemons", "find.map")
 LOG_PATH = os.path.join(os.environ.get("TEMP", "/tmp"), "xyjbot.log")
 MISSION_FILE = os.path.join(os.environ.get("TEMP", "/tmp"), "xyjbot_mission.txt")
 TALLY_PATH = os.path.join(BOT_DIR, "kill_tally.txt")
@@ -33,7 +34,7 @@ MONSTER_FLEE = ("落荒而逃", "仓皇逃走", "逃跑", "夺路而逃")
 MISSION_TTL = 1800       # 30 min guai lifetime
 STUCK_SECS = 600         # 10 min per sweep
 MAX_STEPS_PER_NAV = 200  # max BFS steps before giving up
-TARGET_KILLS = int(os.environ.get("XYJ_TARGET", "5"))
+TARGET_KILLS = int(os.environ.get("XYJ_TARGET", "9999"))
 
 # ── Economy ────────────────────────────────────────────────────────────
 KEEP_ON_HAND = 50        # silver to keep on hand
@@ -84,16 +85,32 @@ REGIONS = {
     "d/obj":        "物品",
 }
 
+# Region name aliases — Yuan Tiangang sometimes uses different names for the same region
+# Maps alternate mission region names → canonical name in find.map
+REGION_ALIASES = {
+    "灵台方寸":  "方寸山",       # 方寸山's formal name → d/lingtai
+    "南海普陀":  "普陀山",       # 普陀山 alias → d/nanhai
+    "东海龙宫":  "龙宫",         # 龙宫 alias → d/sea
+    "东海":      "龙宫",
+    "普陀":      "普陀山",
+    # 龙宫 room names used directly as region by Yuan (no separate region field)
+    "云房":      "龙宫",         # d/sea/girl4
+    "卧龙阁":    "龙宫",         # d/sea/boy3
+    "沁玉殿":    "龙宫",         # d/sea/boy1
+    "休息室":    "龙宫",         # d/sea/wolongrest (or d/sea nearest match)
+}
+
 # Coarse region grouping — which regions are "near 长安" vs "far away"
 # Used for sanity checking: if bot was in 长安 and suddenly sees a 开封 room,
 # something went wrong (teleport? death? wrong identification?)
 REGION_NEIGHBORS = {
-    "长安城":   {"长安郊外", "西行路", "东行路", "高老庄", "皇宫"},
+    "长安城":   {"长安郊外", "西行路", "东行路", "高老庄", "皇宫", "开封城"},
     "长安郊外": {"长安城", "西行路", "东行路", "东海龙宫", "南海普陀"},
-    "西行路":   {"长安城", "长安郊外", "高老庄"},
+    "西行路":   {"长安城", "长安郊外", "高老庄", "开封城"},
     "东行路":   {"长安城", "长安郊外"},
-    "高老庄":   {"长安城", "西行路", "取经路"},
-    "开封城":   {"取经路"},
+    "高老庄":   {"长安城", "西行路", "取经路", "长安郊外"},
+    # 开封城 is directly reachable from 西行路 (west1 east exit → kaifeng/chengmen)
+    "开封城":   {"西行路", "长安城", "取经路"},
     "东海龙宫": {"长安郊外"},
     "南海普陀": {"长安郊外"},
     "取经路":   {"高老庄", "开封城", "大雪山", "梅山"},
@@ -127,7 +144,7 @@ LANDMARKS = {
     "bank":   "d/city/bank",          # 相记钱庄
     "pawn":   "d/city/dangpu",        # 董记当铺 (董朴升)
     "wuguan": "d/city/wuguan",        # 长安武馆 (范芦平)
-    "caotang":"d/city/yuancao",       # 袁氏草堂 (袁守诚)
+    "caotang":"d/city/caotang",       # 袁氏草堂 (袁守诚) — NOTE: d/city/yuancao does not exist in map
 }
 
 # ── Region → directory mapping (from find.map) ────────────────────────
@@ -138,13 +155,17 @@ SPAWN_DIRS = (
     "d/city", "d/westway", "d/kaifeng", "d/lingtai", "d/moon", "d/gao",
     "d/sea", "d/nanhai", "d/eastway", "d/ourhome/honglou",
     "d/xueshan", "d/qujing", "d/penglai", "d/death", "d/meishan",
+    "d/huanggong",  # 皇宫 — reachable from hub in ~4 steps via 长安城
 )
 
 # Dirs reachable on foot (plus d/sea via dive for 龙宫 members)
 ACCESSIBLE_DIRS = (
-    "d/city", "d/westway", "d/kaifeng", "d/lingtai", "d/gao", "d/eastway",
-    # "d/sea",   # requires 避水咒 to dive — add back after obtaining it
-    "d/nanhai",
+    "d/city", "d/changan",           # core hub + outskirts (always navigable transit)
+    "d/westway", "d/kaifeng", "d/lingtai", "d/gao", "d/eastway",
+    "d/sea",    # 龙宫 — accessible with 避水咒 (dive from 东海之滨); avoid maze via KNOWN_UNREACHABLE
+    "d/nanhai", # 普陀山 — accessible via swim from 南海之滨 (costs 20hp/sp)
+    "d/huanggong",  # 皇宫 (Imperial Palace) — 4-step walk from hub, confirmed reachable
+    "d/ourhome/honglou",  # 红楼一梦 — accessible via 黄粱枕 sleep mechanic (special entry)
 )
 
 # ── Special edges (verb-based transitions) ────────────────────────────
@@ -181,9 +202,13 @@ EXIT_TOKENS = {
 MOVE_FAIL = ("方向没有", "不能往", "没有出口", "无法往", "那个方向",
              "没有路", "走不通", "这个方向", "不能到")
 
+# Door-closed indicators — treat like MOVE_FAIL but try opening first
+DOOR_CLOSED_MSGS = ("关着呢", "关着", "挡住了", "必须要先打开", 
+                     "必须先打开", "有门", "门关", "紧闭")
+
 # ── Food/water ────────────────────────────────────────────────────────
 FULL_MSGS = ("饱了", "不想喝", "喝不下", "吃不下", "喝太多", "灌不下", "吃太多")
-EMPTY_MSGS = ("一滴也不剩", "一点也不剩", "没有", "什么", "不懂", "干干净净")
+EMPTY_MSGS = ("一滴也不剩", "一滴不剩", "一点也不剩", "没有", "什么", "不懂", "干干净净")
 
 # ── Chinese direction → English ───────────────────────────────────────
 CN_DIR = {

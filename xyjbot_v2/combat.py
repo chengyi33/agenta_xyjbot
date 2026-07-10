@@ -32,7 +32,7 @@ def engage(s, name, ids=None):
     return False
 
 
-def monitor_combat(s, name):
+def monitor_combat(s, name, ids=None):
     """Wait for combat to resolve. Returns: True (victory), False (loss),
     "dead", "mission_lost" (KO'd), "fled" (we fled), "monster_fled"."""
     for j in range(COMBAT_TIMEOUT // 3):
@@ -68,15 +68,28 @@ def monitor_combat(s, name):
                 if d:
                     print(f"  [CHASE] {name} fled {d} — pursuing")
                     s.sendall((d + "\r\n").encode())
-                    time.sleep(0.7)
-                    r2 = clean(drain(s, quiet=1.0))
-                    # Re-engage
-                    for tid in ["guai", "jing"]:
-                        rr = m(s, f"kill {tid}", q=1.2)
-                        if any(w in rr for w in ("喝道", "想杀", "领教", "奉陪")):
+                    time.sleep(0.8)
+                    r2 = clean(drain(s, quiet=1.2))
+                    # Re-engage with all known IDs
+                    re_engaged = False
+                    for tid in (list(ids or []) + ["guai", "jing", "jing2"]):
+                        rr = m(s, f"kill {tid}", q=1.5)
+                        if any(w in rr for w in ("喝道", "想杀", "领教", "奉陪", "缓缓")):
+                            re_engaged = True
                             break
-                    continue
-                print(f"  [CHASE] {name} fled but no direction")
+                    if re_engaged:
+                        continue
+                    # Try one more adjacent room in same direction
+                    s.sendall((d + "\r\n").encode())
+                    time.sleep(0.8)
+                    for tid in (list(ids or []) + ["guai", "jing"]):
+                        rr = m(s, f"kill {tid}", q=1.5)
+                        if any(w in rr for w in ("喝道", "想杀", "领教", "奉陪")):
+                            re_engaged = True
+                            break
+                    if re_engaged:
+                        continue
+                print(f"  [CHASE] {name} fled but lost track")
                 return "monster_fled"
             # We fled (wimpy)
             print("  [WIMPY] we fled — recovering")
@@ -98,4 +111,4 @@ def fight(s, name, ids=None):
     """Full combat: engage + monitor. Returns result from monitor_combat."""
     if not engage(s, name, ids):
         return False
-    return monitor_combat(s, name)
+    return monitor_combat(s, name, ids=ids)
