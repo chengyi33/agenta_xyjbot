@@ -11,6 +11,22 @@ from net import m, send, parse_hp, drain, clean
 from nav import Navigator
 
 
+def _prefer_jingubang(s):
+    """If 金箍棒 (250 dmg) is in inventory, make it the primary weapon.
+
+    gear_up/smart_eat_drink call 'wield all' which re-equips 钢刀 (25 dmg)
+    as primary, dropping the jingubang. Re-assert jingubang so the bot
+    keeps 250 dmg after any gear/restock action.
+    """
+    inv = m(s, "i", q=1.0, log_path=LOG_PATH)
+    if "金箍棒" in inv or "jingubang" in inv.lower():
+        sc = m(s, "score", q=2.0, log_path=LOG_PATH)
+        dmg = _parse_stat(sc, r"兵器伤害力：\[\s*(\d+)")
+        if dmg < 250:
+            m(s, "unwield blade", q=1.0)
+            m(s, "wield jingubang", q=1.5)
+
+
 def gear_up(s, nav):
     """Ensure we have weapon + shield. Self-aware: check i + score first.
 
@@ -34,6 +50,7 @@ def gear_up(s, nav):
     if dmg == 0 and has_weapon_in_bag:
         print("  [GEAR] weapon in bag but not wielded — wielding")
         m(s, "wield all", q=1.0)
+        _prefer_jingubang(s)
         sc = m(s, "score", q=2.0)
         dmg = _parse_stat(sc, r"兵器伤害力：\[\s*(\d+)")
         print(f"  [GEAR] dmg after wield: {dmg}")
@@ -61,6 +78,7 @@ def gear_up(s, nav):
         m(s, "remove all", q=1.0)
         m(s, "drop coarse", q=1.0)   # drop starting linen shirt
         m(s, "wield all", q=1.0)
+        _prefer_jingubang(s)
         m(s, "wear all", q=1.0)
         sc = m(s, "score", q=2.5)
         dmg = _parse_stat(sc, r"兵器伤害力：\[\s*(\d+)")
@@ -90,6 +108,7 @@ def gear_up(s, nav):
         if "你从萧萧" in r or "买了" in r:
             print("  [GEAR] bought shield (10两)")
         m(s, "wield all", q=1.0)
+        _prefer_jingubang(s)
         m(s, "wear all", q=1.0)
         sc = m(s, "score", q=2.0)
         dmg = _parse_stat(sc, r"兵器伤害力：\[\s*(\d+)")
@@ -120,6 +139,7 @@ def gear_up(s, nav):
             print("  [GEAR] bought shield")
 
     m(s, "wield all", q=1.0)
+    _prefer_jingubang(s)
     m(s, "wear all", q=1.0)
 
     # Check 当铺 (pawn shop) for better gear
@@ -138,6 +158,7 @@ def gear_up(s, nav):
                     if "钱不够" not in r and "什么" not in r:
                         print(f"  [GEAR] bought {item_id} from pawn shop")
                         m(s, "wield all", q=1.0)
+                        _prefer_jingubang(s)
                         m(s, "wear all", q=1.0)
                         break
 

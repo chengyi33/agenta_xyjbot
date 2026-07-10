@@ -415,7 +415,16 @@ def train_at_difu(s, nav):
         cycle += 1
         hp = parse_hp(m(s, "hp", q=1.0))
         qn = hp.get("潜能", 0)
-        
+
+        # Periodic re-assert: keep 金箍棒 (250 dmg) as primary weapon.
+        # Death/PvP at 地府 can silently revert to default 钢刀 (25 dmg)
+        # without disconnecting, so re-wield every few cycles.
+        if cycle % 5 == 0:
+            inv_jg = m(s, "i", q=0.8)
+            if "金箍棒" in inv_jg or "jingubang" in inv_jg.lower():
+                m(s, "unwield blade", q=0.5)
+                m(s, "wield jingubang", q=1.0)
+
         if qn < STOP_QN:
             print(f"\n[TRAIN] ✅ 潜能={qn} < {STOP_QN} — training complete!")
             break
