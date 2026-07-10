@@ -127,6 +127,18 @@ def self_check(s, nav):
         dmg = int((re.search(r"兵器伤害力：\[\s*(\d+)", sc) or [0,0])[1]) if re.search(r"兵器伤害力：\[\s*(\d+)", sc) else 0
         print(f"  [FIX] dmg after wield: {dmg}")
 
+    # Prefer 金箍棒 (250 dmg) as primary weapon if it's in inventory
+    inv_chk = m(s, "i", q=1.0)
+    if ("金箍棒" in inv_chk or "jingubang" in inv_chk.lower()) and dmg < 250:
+        print(f"  [FIX] jingubang available but dmg={dmg} — swapping to jingubang")
+        m(s, "unwield blade", q=1.0)   # free primary hand (钢刀 uses English name)
+        m(s, "unwield dao", q=0.5)
+        r = m(s, "wield jingubang", q=1.5)
+        sc = m(s, "score", q=2.0)
+        mm = re.search(r"兵器伤害力：\[\s*(\d+)", sc)
+        dmg = int(mm.group(1)) if mm else dmg
+        print(f"  [FIX] dmg after jingubang wield: {dmg}")
+
     # Wear armor if in inventory but not equipped
     if arm < 10 and has_armor:
         print("  [FIX] armor in inventory but not worn — wearing")
