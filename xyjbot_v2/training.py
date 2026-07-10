@@ -226,11 +226,20 @@ def _navigate_to_wangfangping(s, nav):
             time.sleep(0.5)
     else:
         print(f"  [JOIN] in 地府 ({short}) — walking to 轮回司")
-        for direction in WUCHANG_TO_WANG:
-            m(s, direction, q=1.5)
-            time.sleep(0.5)
-        look = m(s, "look", q=1.0)
-        if not _has_master(look):
+        # Detect sleep room (司房) vs bridge-entry room (白无常) — different walk paths
+        is_sifang = (rid and "sifang" in rid) or (short and "司房" in short)
+        if is_sifang:
+            # At 司房 — use the known 司房→王方平 walk (NOT WUCHANG_TO_WANG)
+            print(f"  [JOIN] at 司房 — using sleep-room walk to 王方平")
+            at_master = _wake_and_return(s)
+        else:
+            # At 白无常/other 地府 room — walk via WUCHANG_TO_WANG
+            for direction in WUCHANG_TO_WANG:
+                m(s, direction, q=1.5)
+                time.sleep(0.5)
+            at_master = _has_master(m(s, "look", q=1.0))
+        # Final brute-force fallback
+        if not at_master:
             for d in ("north", "south", "east", "west"):
                 m(s, d, q=0.5)
                 if _has_master(m(s, "look", q=0.5)):
