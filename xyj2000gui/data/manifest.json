@@ -1,0 +1,152 @@
+{
+  "room_count": 2504,
+  "npc_count": 1040,
+  "item_count": 114,
+  "areas": {
+    "dntg": {
+      "rooms": 229,
+      "npcs": 0,
+      "items": 0
+    },
+    "kaifeng": {
+      "rooms": 80,
+      "npcs": 0,
+      "items": 0
+    },
+    "jjf": {
+      "rooms": 36,
+      "npcs": 0,
+      "items": 0
+    },
+    "pantao": {
+      "rooms": 12,
+      "npcs": 0,
+      "items": 0
+    },
+    "westway": {
+      "rooms": 19,
+      "npcs": 0,
+      "items": 0
+    },
+    "eastway": {
+      "rooms": 42,
+      "npcs": 0,
+      "items": 0
+    },
+    "xueshan": {
+      "rooms": 61,
+      "npcs": 0,
+      "items": 0
+    },
+    "changan": {
+      "rooms": 56,
+      "npcs": 0,
+      "items": 0
+    },
+    "33tian": {
+      "rooms": 3,
+      "npcs": 0,
+      "items": 0
+    },
+    "cloud": {
+      "rooms": 44,
+      "npcs": 0,
+      "items": 0
+    },
+    "lingtai": {
+      "rooms": 39,
+      "npcs": 0,
+      "items": 0
+    },
+    "obj": {
+      "rooms": 4,
+      "npcs": 0,
+      "items": 0
+    },
+    "erlang": {
+      "rooms": 2,
+      "npcs": 0,
+      "items": 0
+    },
+    "nanhai": {
+      "rooms": 60,
+      "npcs": 0,
+      "items": 0
+    },
+    "ourhome": {
+      "rooms": 34,
+      "npcs": 0,
+      "items": 0
+    },
+    "huanggong": {
+      "rooms": 32,
+      "npcs": 0,
+      "items": 0
+    },
+    "southern": {
+      "rooms": 30,
+      "npcs": 0,
+      "items": 0
+    },
+    "city": {
+      "rooms": 63,
+      "npcs": 0,
+      "items": 0
+    },
+    "penglai": {
+      "rooms": 29,
+      "npcs": 0,
+      "items": 0
+    },
+    "meishan": {
+      "rooms": 19,
+      "npcs": 0,
+      "items": 0
+    },
+    "moon": {
+      "rooms": 64,
+      "npcs": 0,
+      "items": 0
+    },
+    "sky": {
+      "rooms": 30,
+      "npcs": 0,
+      "items": 0
+    },
+    "sea": {
+      "rooms": 66,
+      "npcs": 0,
+      "items": 0
+    },
+    "qujing": {
+      "rooms": 1337,
+      "npcs": 0,
+      "items": 0
+    },
+    "gao": {
+      "rooms": 34,
+      "npcs": 0,
+      "items": 0
+    },
+    "death": {
+      "rooms": 62,
+      "npcs": 0,
+      "items": 0
+    },
+    "wiz": {
+      "rooms": 13,
+      "npcs": 0,
+      "items": 0
+    },
+    "std": {
+      "rooms": 3,
+      "npcs": 0,
+      "items": 0
+    },
+    "cmds": {
+      "rooms": 1,
+      "npcs": 0,
+      "items": 0
+    }
+  }
+}

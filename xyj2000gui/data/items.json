@@ -1,0 +1,1438 @@
+[
+ {
+  "id": "/d/westway/obj/pao2.c",
+  "name": "绿绒袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 5
+  },
+  "area": "westway"
+ },
+ {
+  "id": "/d/westway/obj/pao1.c",
+  "name": "黄花袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 5
+  },
+  "area": "westway"
+ },
+ {
+  "id": "/d/westway/obj/pao3.c",
+  "name": "紫绣袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 5
+  },
+  "area": "westway"
+ },
+ {
+  "id": "/d/xueshan/obj/nihong-yuyi.c",
+  "name": "霓虹羽衣",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 10,
+   "dodge": 20,
+   "personality": 3
+  },
+  "area": "xueshan"
+ },
+ {
+  "id": "/d/lingtai/obj/cloth.c",
+  "name": "太极道袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 4,
+   "spells": 5
+  },
+  "area": "lingtai"
+ },
+ {
+  "id": "/d/lingtai/obj/xiangpao.c",
+  "name": "降魔袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 10,
+   "dodge": 5,
+   "spells": 5
+  },
+  "area": "lingtai"
+ },
+ {
+  "id": "/d/obj/cloth/jia_sha.c",
+  "name": "袈裟",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 15,
+   "spells": 10,
+   "dodge": 10
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/p_cloth.c",
+  "name": "粉红绸衫",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 1,
+   "personality": 3
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/pink_cloth.c",
+  "name": "粉红绸衫",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 1,
+   "personality": 3
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/baipao.c",
+  "name": "白罗袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 15
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/gongqun.c",
+  "name": "宫裙",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 5,
+   "dodge": 10
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/pinkskirt.c",
+  "name": "五色梅浅红裙",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 5,
+   "dodge": 10
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/huangyi.c",
+  "name": "黄色小褂",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 5
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/baguapao.c",
+  "name": "八卦道袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 3,
+   "spells": 5
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/hei.c",
+  "name": "黑袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 5
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/zhanpao.c",
+  "name": "战袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 30
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/sengyi.c",
+  "name": "僧衣",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 2
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/shoupi.c",
+  "name": "皮袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 10
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/mangpao.c",
+  "name": "大红蟒袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 15
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/jinpao.c",
+  "name": "锦花袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 10,
+   "personality": 3
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/xueshan-pao.c",
+  "name": "雪山白袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 4,
+   "personality": 1
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/yayifu.c",
+  "name": "衙役服",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 10
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/tianyi.c",
+  "name": "五彩天衣",
+  "long": ",",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 40,
+   "dodge": 50,
+   "personality": 10
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/luoyi.c",
+  "name": "渌水罗衣",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 10,
+   "dodge": 10,
+   "personality": 3
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/ziyi.c",
+  "name": "紫色小褂",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 5
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/nichang.c",
+  "name": "碧水霓裳",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 1,
+   "personality": 5
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/sengpao.c",
+  "name": "僧袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 5,
+   "spells": 5
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/skirt.c",
+  "name": "轻纱长裙",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 1,
+   "personality": 3
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/bai.c",
+  "name": "白袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 5
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/xianyi.c",
+  "name": "仙衣",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 10,
+   "dodge": 5,
+   "spells": 5
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/pobuyi.c",
+  "name": "破布衣",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 1
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/linen.c",
+  "name": "粗布衣",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 1
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/changpao.c",
+  "name": "长袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 5
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/hufa-jiasha.c",
+  "name": "护法袈裟",
+  "long": "一件金光灿灿的护法袈裟。",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 20
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/daopao.c",
+  "name": "灰色道袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 2
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/taijicloth.c",
+  "name": "太极道袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 4,
+   "spells": 5
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/xiangpao.c",
+  "name": "降魔袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 10,
+   "dodge": 5,
+   "spells": 5
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/jiasha.c",
+  "name": "锦镧袈裟",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 90,
+   "spells": 50,
+   "dodge": 20
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/choupao.c",
+  "name": "绸袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 4,
+   "personality": 1
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/qingduanao.c",
+  "name": "青缎袄",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 2
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/bingfu.c",
+  "name": "兵服",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 10
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/luopao.c",
+  "name": "皂罗袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 15,
+   "dodge": 5,
+   "spells": 10
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/piyi.c",
+  "name": "皮袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 10
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/magua.c",
+  "name": "马褂",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 5
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/xianpao.c",
+  "name": "仙袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 10,
+   "dodge": 5,
+   "spells": 5
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/shoupiqun.c",
+  "name": "兽皮裙",
+  "long": "",
+  "type": "cloth",
+  "material": "leather",
+  "weight": null,
+  "props": {
+   "armor": 15
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/gongpao.c",
+  "name": "宫袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 5,
+   "dodge": 10
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/beixin.c",
+  "name": "皮背心",
+  "long": "",
+  "type": "cloth",
+  "material": "leather",
+  "weight": null,
+  "props": {
+   "armor": 6
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/longpao.c",
+  "name": "蟒龙袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 15
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/cloth/monkcloth.c",
+  "name": "护法袈裟",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 15
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/magic/hamber.c",
+  "name": "琥色毫毛",
+  "long": "transform",
+  "type": "cloth",
+  "material": "hair",
+  "weight": null,
+  "props": {
+   "armor": 1
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/armor/shoupi.c",
+  "name": "狼皮裙",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 5
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/obj/armor/standard/cloth.c",
+  "name": "外衣",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 1
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/d/nanhai/obj/sengpao.c",
+  "name": "僧袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 15,
+   "spells": 10,
+   "dodge": 5
+  },
+  "area": "nanhai"
+ },
+ {
+  "id": "/d/nanhai/obj/jiasha.c",
+  "name": "锦镧袈裟",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 90,
+   "spells": 50,
+   "dodge": 20
+  },
+  "area": "nanhai"
+ },
+ {
+  "id": "/d/ourhome/obj/pink_cloth.c",
+  "name": "粉红绸衫",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 1,
+   "personality": 3
+  },
+  "area": "ourhome"
+ },
+ {
+  "id": "/d/ourhome/obj/skirt.c",
+  "name": "轻纱长裙",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 1,
+   "personality": 3
+  },
+  "area": "ourhome"
+ },
+ {
+  "id": "/d/ourhome/obj/linen.c",
+  "name": "粗布衣",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 1
+  },
+  "area": "ourhome"
+ },
+ {
+  "id": "/d/city/obj/p_cloth.c",
+  "name": "粉红绸衫",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 1,
+   "personality": 3
+  },
+  "area": "city"
+ },
+ {
+  "id": "/d/city/obj/sengyi.c",
+  "name": "僧衣",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 2
+  },
+  "area": "city"
+ },
+ {
+  "id": "/d/city/obj/tiejia.c",
+  "name": "金环锁子甲",
+  "long": "",
+  "type": "cloth",
+  "material": "steel",
+  "weight": null,
+  "props": {
+   "armor": 50
+  },
+  "area": "city"
+ },
+ {
+  "id": "/d/city/obj/yayifu.c",
+  "name": "青色短装",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 4
+  },
+  "area": "city"
+ },
+ {
+  "id": "/d/city/obj/sengpao.c",
+  "name": "黑布僧袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 2
+  },
+  "area": "city"
+ },
+ {
+  "id": "/d/city/obj/cloth.c",
+  "name": "粗布衣",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 2
+  },
+  "area": "city"
+ },
+ {
+  "id": "/d/city/obj/linen.c",
+  "name": "粗布衣",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 2
+  },
+  "area": "city"
+ },
+ {
+  "id": "/d/city/obj/daopao.c",
+  "name": "灰色道袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 2
+  },
+  "area": "city"
+ },
+ {
+  "id": "/d/city/obj/jiasha.c",
+  "name": "护法袈裟",
+  "long": "一件金光灿灿的护法袈裟。",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 30
+  },
+  "area": "city"
+ },
+ {
+  "id": "/d/city/obj/choupao.c",
+  "name": "绸袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 5
+  },
+  "area": "city"
+ },
+ {
+  "id": "/d/city/obj/bingfu.c",
+  "name": "兵服",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 15
+  },
+  "area": "city"
+ },
+ {
+  "id": "/d/city/obj/beixin.c",
+  "name": "皮背心",
+  "long": "",
+  "type": "cloth",
+  "material": "leather",
+  "weight": null,
+  "props": {
+   "armor": 6
+  },
+  "area": "city"
+ },
+ {
+  "id": "/d/moon/obj/tianyi.c",
+  "name": "五彩天衣",
+  "long": ",",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 40,
+   "dodge": 50,
+   "personality": 10
+  },
+  "area": "moon"
+ },
+ {
+  "id": "/d/moon/obj/luoyi.c",
+  "name": "渌水罗衣",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 10,
+   "dodge": 10,
+   "personality": 3
+  },
+  "area": "moon"
+ },
+ {
+  "id": "/d/sea/obj/yinjia.c",
+  "name": "银甲",
+  "long": "",
+  "type": "cloth",
+  "material": "iron",
+  "weight": null,
+  "props": {
+   "armor": 35
+  },
+  "area": "sea"
+ },
+ {
+  "id": "/d/sea/obj/jinpao.c",
+  "name": "锦花袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 10,
+   "personality": 3
+  },
+  "area": "sea"
+ },
+ {
+  "id": "/d/sea/obj/longpao.c",
+  "name": "蟒龙袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 10,
+   "spells": 10
+  },
+  "area": "sea"
+ },
+ {
+  "id": "/d/qujing/jisaiguo/obj/changpao.c",
+  "name": "阿拉伯长袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 2
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/bibotan/obj/zhanpao.c",
+  "name": "锦绣战袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 20,
+   "dodge": 10,
+   "personality": 3,
+   "spirituality": 3
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/tongtian/obj/cloth.c",
+  "name": "cloth",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 1,
+   "dodge": 1
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/tongtian/obj/skirt.c",
+  "name": "skirt",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 1,
+   "dodge": 1
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/baotou/obj/cloth1.c",
+  "name": "pi",
+  "long": "",
+  "type": "cloth",
+  "material": "leather",
+  "weight": null,
+  "props": {
+   "armor": 15,
+   "dodge": -1
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/nuerguo/obj/skirt.c",
+  "name": "skirt",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 3,
+   "personality": 4
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/zhujie/obj/cloth2.c",
+  "name": "pi",
+  "long": "",
+  "type": "cloth",
+  "material": "leather",
+  "weight": null,
+  "props": {
+   "armor": 15,
+   "dodge": -1
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/tianzhu/obj/baipao.c",
+  "name": "白袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 4
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/tianzhu/obj/huapao.c",
+  "name": "大花袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 5,
+   "personality": 1
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/tianzhu/obj/pidun.c",
+  "name": "厚牛皮盾",
+  "long": "",
+  "type": "cloth",
+  "material": "leather",
+  "weight": null,
+  "props": {
+   "armor": 20
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/tianzhu/obj/huaqun.c",
+  "name": "水印花裙",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 1,
+   "dodge": 1
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/tianzhu/obj/hongqun.c",
+  "name": "翡红裙",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 5,
+   "dodge": 5
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/tianzhu/obj/guanpao.c",
+  "name": "官袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 5,
+   "personality": 1
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/tianzhu/obj/piyi.c",
+  "name": "犀牛皮衣",
+  "long": "",
+  "type": "cloth",
+  "material": "leather",
+  "weight": null,
+  "props": {
+   "armor": 25
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/baoxiang/obj/zhanpao.c",
+  "name": "战袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 30
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/baoxiang/obj/cspitan.c",
+  "name": "彩色披毯",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 15
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/baoxiang/obj/changpao.c",
+  "name": "长袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 15
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/baoxiang/obj/huangpao.c",
+  "name": "皇袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 30
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/baoxiang/obj/bpitan.c",
+  "name": "白披毯",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 15
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/baoxiang/obj/gongpao.c",
+  "name": "宫袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 15
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/baoxiang/obj/spqun.c",
+  "name": "兽皮裙",
+  "long": "",
+  "type": "cloth",
+  "material": "leather",
+  "weight": null,
+  "props": {
+   "armor": 15
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/firemount/obj/skirt.c",
+  "name": "芭蕉裙",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 10,
+   "personality": 3
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/dudi/obj/cloth.c",
+  "name": "skirt",
+  "long": "",
+  "type": "cloth",
+  "material": "leather",
+  "weight": null,
+  "props": {
+   "armor": 2,
+   "dodge": 2
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/yinwu/obj/cloth.c",
+  "name": "cloth",
+  "long": "",
+  "type": "cloth",
+  "material": "leather",
+  "weight": null,
+  "props": {
+   "armor": 15,
+   "dodge": -1
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/jingjiling/obj/cloth.c",
+  "name": "葛布长袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 1
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/chechi/obj/gongqun.c",
+  "name": "宫裙",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 5,
+   "dodge": 10
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/chechi/obj/hupi.c",
+  "name": "黄虎皮",
+  "long": "",
+  "type": "cloth",
+  "material": "leather",
+  "weight": null,
+  "props": {
+   "armor": 15
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/chechi/obj/changpao.c",
+  "name": "长袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 15
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/chechi/obj/gongpao.c",
+  "name": "宫袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 5,
+   "dodge": 10
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/qujing/chechi/obj/yujin.c",
+  "name": "浴巾",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 4
+  },
+  "area": "qujing"
+ },
+ {
+  "id": "/d/gao/obj/pink_cloth.c",
+  "name": "粉红绸衫",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 1,
+   "personality": 3
+  },
+  "area": "gao"
+ },
+ {
+  "id": "/d/gao/obj/changpao.c",
+  "name": "长袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 5
+  },
+  "area": "gao"
+ },
+ {
+  "id": "/d/gao/obj/ao.c",
+  "name": "青缎袄",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 2
+  },
+  "area": "gao"
+ },
+ {
+  "id": "/d/gao/obj/piyi.c",
+  "name": "皮袍",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 10
+  },
+  "area": "gao"
+ },
+ {
+  "id": "/d/gao/obj/magua.c",
+  "name": "马褂",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 5
+  },
+  "area": "gao"
+ },
+ {
+  "id": "/obj/cloth.c",
+  "name": "布衣",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 1
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/obj/prize/black_vest.c",
+  "name": "黑丝背心",
+  "long": "\"\n\t\t\t\"\n\"\n\t\t\t\"",
+  "type": "cloth",
+  "material": "blacksilk",
+  "weight": null,
+  "props": {
+   "armor": 30,
+   "armor_vs_force": 70,
+   "attack": -5
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/obj/loginload/skirt.c",
+  "name": "轻纱长裙",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 1,
+   "personality": 3
+  },
+  "area": "obj"
+ },
+ {
+  "id": "/obj/loginload/linen.c",
+  "name": "粗布衣",
+  "long": "",
+  "type": "cloth",
+  "material": "cloth",
+  "weight": null,
+  "props": {
+   "armor": 1
+  },
+  "area": "obj"
+ }
+]
